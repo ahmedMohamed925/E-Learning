@@ -18,7 +18,9 @@ export const fetchScheduleByGrade = createAsyncThunk(
   async (gradeParam, { rejectWithValue }) => {
     try {
       const response = await getScheduleByGrade(gradeParam);
-      return { gradeParam, schedule: response };
+      // Handle API response structure
+      const schedule = response?.schedules || response || [];
+      return { gradeParam, schedule };
     } catch (error) {
       return rejectWithValue(error.message);
     }

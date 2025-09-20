@@ -22,27 +22,29 @@ const GradePage = () => {
   const dispatch = useDispatch();
   
   const gradeName = reverseGradeMapping[gradeSlug];
-  const lessons = useSelector(state => state.lessons.byGrade[gradeSlug] || []);
-  const tasks = useSelector(state => state.tasks.byGrade[gradeSlug] || []);
-  const quizzes = useSelector(state => state.quizzes.byGrade[gradeSlug] || []);
-  const schedule = useSelector(state => state.schedule.byGrade[gradeSlug] || []);
+  
+  // Get the correct API parameters for each service
+  const lessonsParam = gradeName ? lessonsGradeMapping[gradeName] : null;
+  const tasksQuizzesParam = gradeName ? tasksQuizzesGradeMapping[gradeName] : null;
+  const scheduleParam = gradeName ? scheduleGradeMapping[gradeName] : null;
+  
+  // Get data from Redux state using the correct parameters as keys
+  const lessons = useSelector(state => state.lessons.byGrade[lessonsParam] || []);
+  const tasks = useSelector(state => state.tasks.byGrade[tasksQuizzesParam] || []);
+  const quizzes = useSelector(state => state.quizzes.byGrade[tasksQuizzesParam] || []);
+  const schedule = useSelector(state => state.schedule.byGrade[scheduleParam] || []);
   const loading = useSelector(state => 
     state.lessons.loading || state.tasks.loading || state.quizzes.loading || state.schedule.loading
   );
 
   useEffect(() => {
-    if (gradeSlug && gradeName) {
-      // استخدم الـ mapping الصحيح لكل API
-      const lessonsParam = lessonsGradeMapping[gradeName];
-      const tasksQuizzesParam = tasksQuizzesGradeMapping[gradeName];
-      const scheduleParam = scheduleGradeMapping[gradeName];
-      
+    if (gradeName && lessonsParam && tasksQuizzesParam && scheduleParam) {
       dispatch(fetchLessonsByGrade(lessonsParam));
       dispatch(fetchTasksByGrade(tasksQuizzesParam));
       dispatch(fetchQuizzesByGrade(tasksQuizzesParam));
       dispatch(fetchScheduleByGrade(scheduleParam));
     }
-  }, [dispatch, gradeSlug, gradeName]);
+  }, [dispatch, gradeName, lessonsParam, tasksQuizzesParam, scheduleParam]);
 
   const renderTabContent = () => {
     switch (activeTab) {

@@ -1,397 +1,594 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { updateProfile, changePassword } from '../redux/slices/authSlice';
+import { useSelector } from 'react-redux';
+import { getStudentCalendar, getStudentDayEvents } from '../api/schedule.js';
+import { getMyQuizResults } from '../api/quizzes.js';
+import { showToast } from '../utils/helpers.js';
 
 const Profile = () => {
-  const { user, isLoading } = useSelector((state) => state.auth);
-  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const [activeTab, setActiveTab] = useState('info');
+  const [calendarData, setCalendarData] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [quizResults, setQuizResults] = useState([]);
 
-  const [profileData, setProfileData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    grade: ''
-  });
+  // بيانات وهمية للدرجات
+  const studentGrades = [
+    { subject: 'رياضيات - جبر', score: 85, total: 100, grade: 'جيد جدًا', color: 'text-blue-600' },
+    { subject: 'رياضيات - هندسة', score: 92, total: 100, grade: 'ممتاز', color: 'text-green-600' },
+    { subject: 'فيزياء', score: 78, total: 100, grade: 'جيد', color: 'text-yellow-600' },
+    { subject: 'كيمياء', score: 88, total: 100, grade: 'جيد جدًا', color: 'text-blue-600' },
+    { subject: 'لغة عربية', score: 95, total: 100, grade: 'ممتاز', color: 'text-green-600' }
+  ];
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
+  // جلب بيانات التقويم من الباك إند
+  const fetchCalendarData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await getStudentCalendar(selectedMonth, selectedYear);
+      setCalendarData(response.data);
+    } catch (error) {
+      console.error('خطأ في جلب بيانات التقويم:', error);
+      showToast('حدث خطأ في جلب بيانات التقويم', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const [activeTab, setActiveTab] = useState('profile');
-  const [errors, setErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
+  // جلب نتائج الكويزات من الباك إند
+  const fetchQuizResults = async () => {
+    try {
+      const response = await getMyQuizResults();
+      console.log('Quiz Results Response:', response); // للتطوير
+      if (response.success && response.data) {
+        setQuizResults(response.data);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب نتائج الكويزات:', error);
+      showToast('حدث خطأ في جلب نتائج الكويزات', 'error');
+      // في حالة الخطأ، اعرض بيانات فارغة
+      setQuizResults({ results: [], statistics: {} });
+    }
+  };
 
+  // جلب البيانات عند تحميل المكون أو تغيير الشهر/السنة
   useEffect(() => {
-    if (user) {
-      setProfileData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        grade: user.grade || ''
-      });
+    if (activeTab === 'schedule') {
+      fetchCalendarData();
+    } else if (activeTab === 'grades') {
+      fetchQuizResults();
     }
-  }, [user]);
+  }, [activeTab, selectedMonth, selectedYear]);
 
-  const handleProfileChange = (e) => {
-    const { name, value } = e.target;
-    setProfileData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'info':
+        return <ProfileInfo user={user} />;
+      case 'grades':
+        return <StudentGrades grades={studentGrades} quizResults={quizResults} />;
+      case 'schedule':
+        return (
+          <StudentSchedule 
+            calendarData={calendarData}
+            isLoading={isLoading}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+          />
+        );
+      default:
+        return <ProfileInfo user={user} />;
     }
-  };
-
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const validateProfileForm = () => {
-    const newErrors = {};
-
-    if (!profileData.firstName.trim()) {
-      newErrors.firstName = 'الاسم الأول مطلوب';
-    }
-
-    if (!profileData.lastName.trim()) {
-      newErrors.lastName = 'اسم العائلة مطلوب';
-    }
-
-    if (!profileData.email.trim()) {
-      newErrors.email = 'البريد الإلكتروني مطلوب';
-    } else if (!/\S+@\S+\.\S+/.test(profileData.email)) {
-      newErrors.email = 'البريد الإلكتروني غير صحيح';
-    }
-
-    if (!profileData.phone.trim()) {
-      newErrors.phone = 'رقم الهاتف مطلوب';
-    }
-
-    return newErrors;
-  };
-
-  const validatePasswordForm = () => {
-    const newErrors = {};
-
-    if (!passwordData.currentPassword) {
-      newErrors.currentPassword = 'كلمة المرور الحالية مطلوبة';
-    }
-
-    if (!passwordData.newPassword) {
-      newErrors.newPassword = 'كلمة المرور الجديدة مطلوبة';
-    } else if (passwordData.newPassword.length < 6) {
-      newErrors.newPassword = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
-    }
-
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      newErrors.confirmPassword = 'كلمة المرور غير متطابقة';
-    }
-
-    return newErrors;
-  };
-
-  const handleProfileSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validateProfileForm();
-    
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    try {
-      await dispatch(updateProfile(profileData)).unwrap();
-      setSuccessMessage('تم تحديث الملف الشخصي بنجاح');
-      setErrors({});
-    } catch (error) {
-      setErrors({ submit: error.message || 'حدث خطأ أثناء تحديث الملف الشخصي' });
-    }
-  };
-
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validatePasswordForm();
-    
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    try {
-      await dispatch(changePassword(passwordData)).unwrap();
-      setSuccessMessage('تم تغيير كلمة المرور بنجاح');
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-      setErrors({});
-    } catch (error) {
-      setErrors({ submit: error.message || 'حدث خطأ أثناء تغيير كلمة المرور' });
-    }
-  };
-
-  const gradeNames = {
-    '1': 'الصف الأول الثانوي',
-    '2': 'الصف الثاني الثانوي',
-    '3': 'الصف الثالث الثانوي'
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8">
-            <div className="flex items-center space-x-4 space-x-reverse">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
-                <span className="text-2xl font-bold text-blue-600">
-                  {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-                </span>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">الملف الشخصي</h1>
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md mb-6">
+          <nav className="flex space-x-1 space-x-reverse p-1">
+            <button
+              onClick={() => setActiveTab('info')}
+              className={`flex-1 py-3 px-6 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2 space-x-reverse ${
+                activeTab === 'info'
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <span>👤</span>
+              <span>معلومات الطالب</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('grades')}
+              className={`flex-1 py-3 px-6 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2 space-x-reverse ${
+                activeTab === 'grades'
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <span>📊</span>
+              <span>درجات الطالب</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('schedule')}
+              className={`flex-1 py-3 px-6 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2 space-x-reverse ${
+                activeTab === 'schedule'
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <span>📅</span>
+              <span>تقويم الطالب</span>
+            </button>
+          </nav>
+        </div>
+
+        <div className="animate-fadeIn">
+          {renderTabContent()}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// مكون عرض معلومات الطالب
+const ProfileInfo = ({ user }) => (
+  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+    <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 md:space-x-reverse">
+      <div className="flex-shrink-0">
+        <img
+          src="/default_user.png"
+          alt="صورة الطالب"
+          className="w-32 h-32 rounded-full border-4 border-primary-200 dark:border-primary-800 object-cover"
+        />
+      </div>
+      
+      <div className="flex-1 text-center md:text-right">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          {user?.name || 'اسم الطالب'}
+        </h2>
+        
+        <div className="space-y-3">
+          <div className="flex items-center justify-center md:justify-start space-x-2 space-x-reverse">
+            <span className="text-xl">📧</span>
+            <span className="text-gray-600 dark:text-gray-300">
+              {user?.email || 'البريد الإلكتروني'}
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-center md:justify-start space-x-2 space-x-reverse">
+            <span className="text-xl">🎓</span>
+            <span className="text-gray-600 dark:text-gray-300">
+              {user?.grade || 'الصف الدراسي'}
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-center md:justify-start space-x-2 space-x-reverse">
+            <span className="text-xl">📅</span>
+            <span className="text-gray-600 dark:text-gray-300">
+              تاريخ التسجيل: {new Date().toLocaleDateString('ar')}
+            </span>
+          </div>
+        </div>
+        
+        
+      </div>
+    </div>
+  </div>
+);
+
+// مكون عرض درجات الطالب
+const StudentGrades = ({ grades, quizResults }) => {
+  // دالة لحساب التقدير بناءً على النسبة المئوية
+  const getGradeInfo = (percentage) => {
+    if (percentage >= 90) {
+      return { grade: 'ممتاز', color: 'text-green-600', bgColor: 'bg-green-100 dark:bg-green-900', emoji: '🏆' };
+    } else if (percentage >= 80) {
+      return { grade: 'جيد جداً', color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900', emoji: '⭐' };
+    } else if (percentage >= 70) {
+      return { grade: 'جيد', color: 'text-yellow-600', bgColor: 'bg-yellow-100 dark:bg-yellow-900', emoji: '👍' };
+    } else if (percentage >= 60) {
+      return { grade: 'مقبول', color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900', emoji: '📈' };
+    } else {
+      return { grade: 'راسب', color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900', emoji: '📚' };
+    }
+  };
+
+  // دالة للحصول على لون الأداء
+  const getPerformanceColor = (performance) => {
+    switch(performance) {
+      case 'ممتاز':
+        return 'text-green-600 bg-green-100 dark:bg-green-900';
+      case 'جيد جداً':
+        return 'text-blue-600 bg-blue-100 dark:bg-blue-900';
+      case 'جيد':
+        return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900';
+      case 'يحتاج تحسين':
+        return 'text-red-600 bg-red-100 dark:bg-red-900';
+      default:
+        return 'text-gray-600 bg-gray-100 dark:bg-gray-700';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* درجات الكويزات */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center space-x-2 space-x-reverse">
+          <span>🧠</span>
+          <span>نتائج الكويزات</span>
+        </h3>
+        
+        {quizResults && quizResults.results && quizResults.results.length > 0 ? (
+          <div className="space-y-6">
+            {/* إحصائيات سريعة */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 dark:bg-blue-900/50 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {quizResults.statistics?.totalQuizzes || 0}
+                </div>
+                <div className="text-sm text-blue-500 dark:text-blue-300">إجمالي الكويزات</div>
               </div>
-              <div className="text-white">
-                <h1 className="text-2xl font-bold">{user?.firstName} {user?.lastName}</h1>
-                <p className="text-blue-100">{gradeNames[user?.grade] || 'غير محدد'}</p>
-                <p className="text-blue-100">{user?.email}</p>
+              <div className="bg-green-50 dark:bg-green-900/50 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {quizResults.statistics?.averageScore || 0}%
+                </div>
+                <div className="text-sm text-green-500 dark:text-green-300">المتوسط العام</div>
+              </div>
+              <div className="bg-yellow-50 dark:bg-yellow-900/50 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {quizResults.statistics?.bestScore || 0}%
+                </div>
+                <div className="text-sm text-yellow-500 dark:text-yellow-300">أفضل نتيجة</div>
+              </div>
+              <div className="bg-purple-50 dark:bg-purple-900/50 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {quizResults.statistics?.totalTimeSpent?.display || '0:00'}
+                </div>
+                <div className="text-sm text-purple-500 dark:text-purple-300">إجمالي الوقت</div>
+              </div>
+            </div>
+
+            {/* جدول النتائج المفصل */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-right">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">🧠 اسم الكويز</th>
+                    <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">📚 المادة</th>
+                    <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">🔢 الدرجة</th>
+                    <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">📊 النسبة</th>
+                    <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">🏅 التقدير</th>
+                    <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">📈 الأداء</th>
+                    <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">⏱️ الوقت</th>
+                    <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">📅 التاريخ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quizResults.results.map((result, index) => {
+                    const gradeInfo = getGradeInfo(result.score.percentage);
+                    const performanceClass = getPerformanceColor(result.performance);
+                    
+                    return (
+                      <tr key={result.id || index} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                        <td className="py-4 px-4 text-gray-800 dark:text-gray-200 font-medium">
+                          <div className="flex items-center space-x-2 space-x-reverse">
+                            <span className="text-lg">{gradeInfo.emoji}</span>
+                            <span>{result.quiz.title}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-gray-600 dark:text-gray-400">
+                          {result.quiz.subject}
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className="text-lg font-bold text-gray-900 dark:text-white">
+                            {result.score.earnedPoints} / {result.score.totalPoints}
+                          </span>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {result.score.correctAnswers}/{result.score.totalQuestions} صحيح
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center space-x-2 space-x-reverse">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${gradeInfo.bgColor} ${gradeInfo.color}`}>
+                              {result.score.percentage}
+                            </div>
+                            <span className="text-lg font-bold text-gray-900 dark:text-white">%</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className={`font-semibold px-3 py-1 rounded-full ${gradeInfo.color} ${gradeInfo.bgColor}`}>
+                            {result.grade.description}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className={`font-medium px-3 py-1 rounded-full ${performanceClass}`}>
+                            {result.performance}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 text-gray-600 dark:text-gray-400">
+                          <div className="flex items-center space-x-1 space-x-reverse">
+                            <span className="text-sm">⏱️</span>
+                            <span className="font-mono text-sm">{result.timeSpent.display}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-gray-600 dark:text-gray-400">
+                          {new Date(result.completedAt).toLocaleDateString('ar-EG', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/50 dark:to-blue-900/50 rounded-2xl p-8 max-w-md mx-auto">
+              <div className="text-6xl mb-4">🧠</div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                لا توجد نتائج كويزات بعد
+              </h4>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                ابدأ في حل الكويزات لترى نتائجك هنا
+              </p>
+              <div className="bg-blue-50 dark:bg-blue-900/50 rounded-lg p-3 text-sm text-blue-600 dark:text-blue-400">
+                💡 نصيحة: حل الكويزات يساعدك على تقييم مستواك وتحسين أدائك
               </div>
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Tabs */}
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 space-x-reverse px-6">
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'profile'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                الملف الشخصي
-              </button>
-              <button
-                onClick={() => setActiveTab('password')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'password'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                تغيير كلمة المرور
-              </button>
-            </nav>
-          </div>
+     
+    </div>
+  );
+};
 
-          {/* Content */}
-          <div className="px-6 py-8">
-            {successMessage && (
-              <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-green-600 text-sm">{successMessage}</p>
-              </div>
-            )}
+// مكون عرض تقويم الطالب
+const StudentSchedule = ({ 
+  calendarData, 
+  isLoading, 
+  selectedMonth, 
+  selectedYear, 
+  onMonthChange, 
+  onYearChange 
+}) => {
+  const months = [
+    { value: 1, label: 'يناير' },
+    { value: 2, label: 'فبراير' },
+    { value: 3, label: 'مارس' },
+    { value: 4, label: 'أبريل' },
+    { value: 5, label: 'مايو' },
+    { value: 6, label: 'يونيو' },
+    { value: 7, label: 'يوليو' },
+    { value: 8, label: 'أغسطس' },
+    { value: 9, label: 'سبتمبر' },
+    { value: 10, label: 'أكتوبر' },
+    { value: 11, label: 'نوفمبر' },
+    { value: 12, label: 'ديسمبر' }
+  ];
 
-            {activeTab === 'profile' && (
-              <form onSubmit={handleProfileSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="firstName" className="form-label">
-                      الاسم الأول
-                    </label>
-                    <input
-                      id="firstName"
-                      name="firstName"
-                      type="text"
-                      value={profileData.firstName}
-                      onChange={handleProfileChange}
-                      className={`form-input ${errors.firstName ? 'form-input-error' : ''}`}
-                    />
-                    {errors.firstName && (
-                      <p className="form-error">{errors.firstName}</p>
-                    )}
-                  </div>
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ar', { 
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
-                  <div>
-                    <label htmlFor="lastName" className="form-label">
-                      اسم العائلة
-                    </label>
-                    <input
-                      id="lastName"
-                      name="lastName"
-                      type="text"
-                      value={profileData.lastName}
-                      onChange={handleProfileChange}
-                      className={`form-input ${errors.lastName ? 'form-input-error' : ''}`}
-                    />
-                    {errors.lastName && (
-                      <p className="form-error">{errors.lastName}</p>
-                    )}
-                  </div>
-                </div>
+  const formatTime = (timeString) => {
+    return timeString || 'غير محدد';
+  };
 
-                <div>
-                  <label htmlFor="email" className="form-label">
-                    البريد الإلكتروني
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={profileData.email}
-                    onChange={handleProfileChange}
-                    className={`form-input ${errors.email ? 'form-input-error' : ''}`}
-                  />
-                  {errors.email && (
-                    <p className="form-error">{errors.email}</p>
-                  )}
-                </div>
+  const getEventTypeIcon = (type) => {
+    switch (type) {
+      case 'schedule': return '📚';
+      case 'task': return '📝';
+      case 'quiz': return '🧪';
+      case 'lesson': return '🎥';
+      default: return '📅';
+    }
+  };
 
-                <div>
-                  <label htmlFor="phone" className="form-label">
-                    رقم الهاتف
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={profileData.phone}
-                    onChange={handleProfileChange}
-                    className={`form-input ${errors.phone ? 'form-input-error' : ''}`}
-                  />
-                  {errors.phone && (
-                    <p className="form-error">{errors.phone}</p>
-                  )}
-                </div>
+  const getEventTypeName = (type) => {
+    switch (type) {
+      case 'schedule': return 'محاضرة';
+      case 'task': return 'مهمة';
+      case 'quiz': return 'اختبار';
+      case 'lesson': return 'درس';
+      default: return 'حدث';
+    }
+  };
 
-                <div>
-                  <label htmlFor="grade" className="form-label">
-                    الصف الدراسي
-                  </label>
-                  <select
-                    id="grade"
-                    name="grade"
-                    value={profileData.grade}
-                    onChange={handleProfileChange}
-                    className="form-input"
-                  >
-                    <option value="">اختر الصف الدراسي</option>
-                    <option value="1">الصف الأول الثانوي</option>
-                    <option value="2">الصف الثاني الثانوي</option>
-                    <option value="3">الصف الثالث الثانوي</option>
-                  </select>
-                </div>
+  const getAllEvents = () => {
+    if (!calendarData?.calendar) return [];
+    
+    const allEvents = [];
+    calendarData.calendar.forEach(dayData => {
+      const date = dayData.date;
+      
+      // إضافة الجداول الدراسية
+      dayData.schedules?.forEach(schedule => {
+        allEvents.push({
+          ...schedule,
+          date,
+          type: 'schedule',
+          displayTitle: schedule.title || schedule.subject,
+          displayTime: `${schedule.timeFrom} - ${schedule.timeTo}`
+        });
+      });
 
-                {errors.submit && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-red-600 text-sm">{errors.submit}</p>
-                  </div>
-                )}
+      // إضافة المهام
+      dayData.tasks?.forEach(task => {
+        allEvents.push({
+          ...task,
+          date,
+          type: 'task',
+          displayTitle: task.title,
+          displayTime: new Date(task.dueDate).toLocaleTimeString('ar', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })
+        });
+      });
 
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="btn btn-primary"
-                  >
-                    {isLoading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
-                  </button>
-                </div>
-              </form>
-            )}
+      // إضافة الاختبارات
+      dayData.quizzes?.forEach(quiz => {
+        allEvents.push({
+          ...quiz,
+          date,
+          type: 'quiz',
+          displayTitle: quiz.title,
+          displayTime: `${quiz.duration} دقيقة`
+        });
+      });
 
-            {activeTab === 'password' && (
-              <form onSubmit={handlePasswordSubmit} className="space-y-6 max-w-md">
-                <div>
-                  <label htmlFor="currentPassword" className="form-label">
-                    كلمة المرور الحالية
-                  </label>
-                  <input
-                    id="currentPassword"
-                    name="currentPassword"
-                    type="password"
-                    value={passwordData.currentPassword}
-                    onChange={handlePasswordChange}
-                    className={`form-input ${errors.currentPassword ? 'form-input-error' : ''}`}
-                  />
-                  {errors.currentPassword && (
-                    <p className="form-error">{errors.currentPassword}</p>
-                  )}
-                </div>
+      // إضافة الدروس
+      dayData.lessons?.forEach(lesson => {
+        allEvents.push({
+          ...lesson,
+          date,
+          type: 'lesson',
+          displayTitle: lesson.title,
+          displayTime: new Date(lesson.createdAt).toLocaleTimeString('ar', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })
+        });
+      });
+    });
 
-                <div>
-                  <label htmlFor="newPassword" className="form-label">
-                    كلمة المرور الجديدة
-                  </label>
-                  <input
-                    id="newPassword"
-                    name="newPassword"
-                    type="password"
-                    value={passwordData.newPassword}
-                    onChange={handlePasswordChange}
-                    className={`form-input ${errors.newPassword ? 'form-input-error' : ''}`}
-                  />
-                  {errors.newPassword && (
-                    <p className="form-error">{errors.newPassword}</p>
-                  )}
-                </div>
+    return allEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+  };
 
-                <div>
-                  <label htmlFor="confirmPassword" className="form-label">
-                    تأكيد كلمة المرور الجديدة
-                  </label>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    value={passwordData.confirmPassword}
-                    onChange={handlePasswordChange}
-                    className={`form-input ${errors.confirmPassword ? 'form-input-error' : ''}`}
-                  />
-                  {errors.confirmPassword && (
-                    <p className="form-error">{errors.confirmPassword}</p>
-                  )}
-                </div>
-
-                {errors.submit && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-red-600 text-sm">{errors.submit}</p>
-                  </div>
-                )}
-
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="btn btn-primary"
-                  >
-                    {isLoading ? 'جاري التغيير...' : 'تغيير كلمة المرور'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2 space-x-reverse">
+          <span>📅</span>
+          <span>تقويم الطالب</span>
+        </h3>
+        
+        {/* فلاتر الشهر والسنة */}
+        <div className="flex gap-3">
+          <select
+            value={selectedMonth}
+            onChange={(e) => onMonthChange(parseInt(e.target.value))}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            {months.map(month => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
+            ))}
+          </select>
+          
+          <select
+            value={selectedYear}
+            onChange={(e) => onYearChange(parseInt(e.target.value))}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            {[2024, 2025, 2026].map(year => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
+
+      {/* إحصائيات التقويم */}
+      {calendarData?.stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {calendarData.stats.totalSchedules}
+            </div>
+            <div className="text-sm text-blue-700 dark:text-blue-300">محاضرات</div>
+          </div>
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {calendarData.stats.totalTasks}
+            </div>
+            <div className="text-sm text-green-700 dark:text-green-300">مهام</div>
+          </div>
+          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              {calendarData.stats.totalQuizzes}
+            </div>
+            <div className="text-sm text-orange-700 dark:text-orange-300">اختبارات</div>
+          </div>
+          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              {calendarData.stats.totalLessons}
+            </div>
+            <div className="text-sm text-purple-700 dark:text-purple-300">دروس</div>
+          </div>
+        </div>
+      )}
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          <span className="mr-2 text-gray-600 dark:text-gray-400">جاري تحميل التقويم...</span>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-right">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">📆 التاريخ</th>
+                <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">📋 النوع</th>
+                <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">📚 العنوان</th>
+                <th className="py-3 px-4 text-gray-900 dark:text-white font-semibold">🕐 الوقت</th>
+              </tr>
+            </thead>
+            <tbody>
+              {getAllEvents().length > 0 ? (
+                getAllEvents().map((event, index) => (
+                  <tr key={index} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                    <td className="py-4 px-4 text-gray-800 dark:text-gray-200 font-medium">
+                      {formatDate(event.date)}
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className="flex items-center space-x-2 space-x-reverse">
+                        <span>{getEventTypeIcon(event.type)}</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          {getEventTypeName(event.type)}
+                        </span>
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-gray-800 dark:text-gray-200">
+                      {event.displayTitle}
+                    </td>
+                    <td className="py-4 px-4 text-gray-800 dark:text-gray-200">
+                      {event.displayTime}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="py-8 px-4 text-center text-gray-500 dark:text-gray-400">
+                    لا توجد أحداث في هذا الشهر
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

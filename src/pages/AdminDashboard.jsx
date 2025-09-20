@@ -5,26 +5,23 @@ import LessonsManagement from '../components/LessonsManagement.jsx';
 import TasksManagement from '../components/TasksManagement.jsx';
 import QuizzesManagement from '../components/QuizzesManagement.jsx';
 import ScheduleManagement from '../components/ScheduleManagement.jsx';
+import Analytics from '../components/Analytics.jsx';
 
 const AdminDashboard = () => {
   const { user } = useSelector(state => state.auth);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [stats, setStats] = useState({
-    totalStudents: 0,
-    totalCourses: 0,
-    totalLessons: 0,
-    completionRate: 0
-  });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // إغلاق القائمة المحمولة عند تغيير حجم الشاشة
   useEffect(() => {
-    // Fetch admin statistics
-    // This would normally come from an API
-    setStats({
-      totalStudents: 150,
-      totalCourses: 12,
-      totalLessons: 48,
-      completionRate: 75
-    });
+    const handleResize = () => {
+      if (window.innerWidth >= 768) { // md breakpoint
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   if (!user || !hasAdminPrivileges(user)) {
@@ -74,88 +71,18 @@ const AdminDashboard = () => {
 
   const renderDashboardContent = () => (
     <div className="space-y-6">
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">👥</span>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">إجمالي الطلاب</dt>
-                  <dd className="text-lg font-medium text-gray-900 dark:text-white">{stats.totalStudents}</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">📚</span>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">إجمالي الدروس</dt>
-                  <dd className="text-lg font-medium text-gray-900 dark:text-white">{stats.totalLessons}</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">📝</span>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">المهام النشطة</dt>
-                  <dd className="text-lg font-medium text-gray-900 dark:text-white">24</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">📈</span>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">معدل الإكمال</dt>
-                  <dd className="text-lg font-medium text-gray-900 dark:text-white">{stats.completionRate}%</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">نظرة عامة سريعة</h3>
-        <p className="text-gray-600 dark:text-gray-400">
-          مرحباً {user?.name}! يمكنك من هنا إدارة جميع جوانب المنصة التعليمية. 
-          استخدم التبويبات أعلاه للتنقل بين أقسام الإدارة المختلفة.
+      {/* Welcome Message */}
+      <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl shadow-lg p-6 text-white">
+        <h2 className="text-2xl font-bold mb-2">
+          مرحباً بك، {user?.name || 'المدير'}! 👋
+        </h2>
+        <p className="text-primary-100">
+          لوحة التحكم الخاصة بك لإدارة المنصة التعليمية. تابع الإحصائيات والأنشطة الحديثة هنا.
         </p>
       </div>
+
+      {/* Analytics Component */}
+      <Analytics />
     </div>
   );
 
@@ -176,156 +103,95 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-4 md:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">لوحة التحكم الإدارية</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">مرحباً {user?.name}، إليك نظرة عامة على المنصة</p>
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">لوحة التحكم الإدارية</h1>
+          <p className="mt-2 text-sm md:text-base text-gray-600 dark:text-gray-400">
+            مرحباً {user?.name}، إليك نظرة عامة على المنصة
+            <span className="md:hidden block mt-1 text-primary-600 dark:text-primary-400 font-medium">
+              {tabs.find(tab => tab.id === activeTab)?.icon} {tabs.find(tab => tab.id === activeTab)?.label}
+            </span>
+          </p>
         </div>
 
         {/* Navigation Tabs */}
         <div className="mb-8">
-          <nav className="flex space-x-1 space-x-reverse bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex space-x-1 space-x-reverse bg-gray-100 dark:bg-gray-800 p-1 rounded-lg overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 space-x-reverse px-4 py-2 rounded-md font-medium transition-colors duration-200 ${
+                className={`flex items-center justify-center md:justify-start space-x-2 space-x-reverse px-2 md:px-4 py-2 rounded-md font-medium transition-colors duration-200 whitespace-nowrap min-w-0 flex-shrink-0 ${
                   activeTab === tab.id
                     ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
+                title={tab.label}
               >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
+                <span className="text-lg md:text-base">{tab.icon}</span>
+                <span className="hidden lg:inline text-sm lg:text-base">{tab.label}</span>
               </button>
             ))}
           </nav>
+
+          {/* Mobile Navigation */}
+          <div className="md:hidden">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="w-full flex items-center justify-between bg-gray-100 dark:bg-gray-800 p-3 rounded-lg mb-2"
+            >
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <span>{tabs.find(tab => tab.id === activeTab)?.icon}</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {tabs.find(tab => tab.id === activeTab)?.label}
+                </span>
+              </div>
+              <svg 
+                className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${isMobileMenuOpen ? 'rotate-180' : ''}`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Mobile Menu Dropdown */}
+            {isMobileMenuOpen && (
+              <nav className="bg-gray-100 dark:bg-gray-800 rounded-lg p-2 space-y-1">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-md font-medium transition-colors duration-200 text-right ${
+                      activeTab === tab.id
+                        ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <span className="text-xl">{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </nav>
+            )}
+          </div>
         </div>
 
         {/* Tab Content */}
-        {renderTabContent()}
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">👥</span>
-                  </div>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">إجمالي الطلاب</dt>
-                    <dd className="text-lg font-medium text-gray-900">{stats.totalStudents}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">📚</span>
-                  </div>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">إجمالي الدورات</dt>
-                    <dd className="text-lg font-medium text-gray-900">{stats.totalCourses}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">🎥</span>
-                  </div>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">إجمالي الدروس</dt>
-                    <dd className="text-lg font-medium text-gray-900">{stats.totalLessons}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">📈</span>
-                  </div>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">معدل الإكمال</dt>
-                    <dd className="text-lg font-medium text-gray-900">{stats.completionRate}%</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="w-full overflow-hidden">
+          {renderTabContent()}
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white shadow rounded-lg mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">الإجراءات السريعة</h3>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
-                إضافة دورة جديدة
-              </button>
-              <button className="bg-secondary-600 text-white px-4 py-2 rounded-lg hover:bg-secondary-700 transition-colors">
-                إدارة الطلاب
-              </button>
-              <button className="bg-success-600 text-white px-4 py-2 rounded-lg hover:bg-success-700 transition-colors">
-                عرض التقارير
-              </button>
-            </div>
-          </div>
-        </div>
 
-        {/* Recent Activity */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">النشاط الأخير</h3>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <p className="text-sm text-gray-600">طالب جديد انضم للمنصة - أحمد محمد</p>
-                <span className="text-xs text-gray-400">منذ ساعتين</span>
-              </div>
-              <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                <p className="text-sm text-gray-600">تم إنشاء دورة جديدة - برمجة تطبيقات الويب</p>
-                <span className="text-xs text-gray-400">منذ 4 ساعات</span>
-              </div>
-              <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                <p className="text-sm text-gray-600">طالب أكمل دورة - مقدمة في البرمجة</p>
-                <span className="text-xs text-gray-400">منذ يوم واحد</span>
-              </div>
-            </div>
-          </div>
-        </div>
+
+
       </div>
     </div>
   );

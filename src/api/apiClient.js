@@ -80,7 +80,9 @@ export async function apiPost(path, body) {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Network error' }));
-      throw new Error(errorData.message || `HTTP ${response.status}`);
+      const error = new Error(errorData.message || `HTTP ${response.status}`);
+      error.response = { data: errorData, status: response.status };
+      throw error;
     }
     
     return await response.json();
@@ -99,7 +101,9 @@ export async function apiPut(path, body) {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Network error' }));
-      throw new Error(errorData.message || `HTTP ${response.status}`);
+      const error = new Error(errorData.message || `HTTP ${response.status}`);
+      error.response = { data: errorData, status: response.status };
+      throw error;
     }
     
     return await response.json();

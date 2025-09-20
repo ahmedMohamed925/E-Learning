@@ -19,3 +19,20 @@ export const updateQuiz = async (id, quizData) => {
 export const deleteQuiz = async (id) => {
   return await apiDelete(`/api/quizzes/${id}`);
 };
+
+// Student Quiz APIs
+export const startQuiz = async (quizId) => {
+  return await apiGet(`/api/quizzes/${quizId}/start`);
+};
+
+export const submitQuiz = async (quizId, submissionData) => {
+  return await apiPost(`/api/quizzes/${quizId}/submit`, submissionData);
+};
+
+export const getMyQuizResults = async () => {
+  return await apiGet('/api/quizzes/results/my-results');
+};
+
+export const getQuizResultDetails = async (resultId) => {
+  return await apiGet(`/api/quizzes/results/${resultId}/details`);
+};

@@ -17,7 +17,13 @@ export const resendOtp = async (email) => {
 };
 
 export const changePassword = async (passwordData) => {
-  return await apiPost('/api/users/change-password', passwordData);
+  // Extract only the required fields for the backend
+  const { email, oldPassword, newPassword } = passwordData;
+  return await apiPost('/api/users/change-password', {
+    email,
+    oldPassword,
+    newPassword
+  });
 };
 
 export const requestPasswordReset = async (email) => {

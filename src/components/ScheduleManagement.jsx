@@ -8,6 +8,8 @@ const ScheduleManagement = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(null);
+  const [error, setError] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
   const [formData, setFormData] = useState({
     day: '',
     subject: 'رياضيات',
@@ -55,11 +57,50 @@ const ScheduleManagement = () => {
     }
   };
 
+  // دالة لمعالجة أخطاء التحقق من صحة البيانات
+  const handleValidationErrors = (error) => {
+    console.log('Full error object:', error);
+    console.log('Error response:', error.response);
+    console.log('Error data:', error.response?.data);
+    
+    // التحقق من وجود أخطاء التحقق في البيانات
+    const errorData = error.response?.data;
+    
+    // التحقق من وجود errors array في البيانات
+    if (errorData && errorData.errors && Array.isArray(errorData.errors)) {
+      const errors = {};
+      errorData.errors.forEach(err => {
+        errors[err.path] = err.msg;
+      });
+      setValidationErrors(errors);
+      
+      // إنشاء رسالة موحدة للأخطاء
+      const errorMessages = errorData.errors.map(err => err.msg);
+      setError(errorMessages.join('. '));
+      return true;
+    }
+    
+    // التحقق من وجود رسالة خطأ مباشرة
+    if (errorData && errorData.message) {
+      setError(errorData.message);
+      return true;
+    }
+    
+    return false;
+  };
+
+  // دالة لمسح الأخطاء
+  const clearErrors = () => {
+    setError(null);
+    setValidationErrors({});
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    clearErrors(); // مسح الأخطاء السابقة
     
     if (!formData.day || !formData.subject || !formData.date || !formData.timeFrom || !formData.timeTo || !formData.grade) {
-      alert('يرجى ملء جميع الحقول المطلوبة');
+      setError('يرجى ملء جميع الحقول المطلوبة');
       return;
     }
 
@@ -68,7 +109,7 @@ const ScheduleManagement = () => {
     const timeToMinutes = formData.timeTo.split(':').reduce((h, m) => h * 60 + +m);
     
     if (timeFromMinutes >= timeToMinutes) {
-      alert('وقت البداية يجب أن يكون قبل وقت النهاية');
+      setError('وقت البداية يجب أن يكون قبل وقت النهاية');
       return;
     }
 
@@ -82,9 +123,11 @@ const ScheduleManagement = () => {
 
       if (editingSchedule) {
         await updateSchedule(editingSchedule._id, scheduleData);
+        setError(null);
         alert('تم تحديث الجدول بنجاح');
       } else {
         await createSchedule(scheduleData);
+        setError(null);
         alert('تم إنشاء الجدول بنجاح');
       }
 
@@ -102,13 +145,22 @@ const ScheduleManagement = () => {
       fetchSchedules();
     } catch (error) {
       console.error('خطأ في حفظ الجدول:', error);
-      alert(editingSchedule ? 'فشل في تحديث الجدول' : 'فشل في إنشاء الجدول');
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
+      
+      // معالجة أخطاء التحقق من صحة البيانات
+      if (!handleValidationErrors(error)) {
+        // إذا لم تكن أخطاء تحقق، اعرض رسالة خطأ عامة
+        const errorMsg = error.response?.data?.message || error.message || 'خطأ غير معروف';
+        setError(`${editingSchedule ? 'فشل في تحديث الجدول' : 'فشل في إنشاء الجدول'}: ${errorMsg}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (schedule) => {
+    clearErrors(); // مسح الأخطاء
     setEditingSchedule(schedule);
     const scheduleDate = new Date(schedule.date);
     setFormData({
@@ -121,6 +173,27 @@ const ScheduleManagement = () => {
       instructor: schedule.instructor
     });
     setShowModal(true);
+  };
+
+  const handleOpenModal = () => {
+    clearErrors(); // مسح الأخطاء
+    setEditingSchedule(null);
+    setFormData({
+      day: '',
+      subject: 'رياضيات',
+      date: '',
+      timeFrom: '',
+      timeTo: '',
+      grade: '',
+      instructor: user?.id || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    clearErrors(); // مسح الأخطاء
+    setShowModal(false);
+    setEditingSchedule(null);
   };
 
   const handleDelete = async (scheduleId) => {
@@ -140,17 +213,7 @@ const ScheduleManagement = () => {
   };
 
   const resetForm = () => {
-    setFormData({
-      day: '',
-      subject: 'رياضيات',
-      date: '',
-      timeFrom: '',
-      timeTo: '',
-      grade: '',
-      instructor: user?.id || ''
-    });
-    setEditingSchedule(null);
-    setShowModal(false);
+    handleCloseModal();
   };
 
   const formatDate = (dateString) => {
@@ -192,7 +255,7 @@ const ScheduleManagement = () => {
           <p className="text-gray-600 dark:text-gray-400">إدارة جداول جميع الصفوف</p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={handleOpenModal}
           className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 space-x-reverse"
         >
           <span>➕</span>
@@ -286,6 +349,16 @@ const ScheduleManagement = () => {
               </h3>
             </div>
 
+            {/* عرض الأخطاء */}
+            {error && (
+              <div className="mx-6 mt-4 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div className="flex items-center">
+                  <span className="text-red-400 ml-2">❌</span>
+                  <p className="text-sm text-red-800 dark:text-red-200 font-medium">{error}</p>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -326,9 +399,19 @@ const ScheduleManagement = () => {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                    validationErrors.date 
+                      ? 'border-red-500 dark:border-red-500' 
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}
                   required
                 />
+                {validationErrors.date && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                    <span className="ml-1">⚠️</span>
+                    {validationErrors.date}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

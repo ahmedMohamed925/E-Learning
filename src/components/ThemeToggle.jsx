@@ -6,7 +6,11 @@ const ThemeToggle = () => {
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     localStorage.setItem('theme', theme);
   }, [theme]);
 
@@ -17,7 +21,7 @@ const ThemeToggle = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="theme-toggle"
+      className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-200 text-lg"
       title={theme === 'light' ? 'تبديل إلى الوضع المظلم' : 'تبديل إلى الوضع الفاتح'}
     >
       {theme === 'light' ? '🌓' : '☀️'}

@@ -20,9 +20,9 @@ function App() {
   return (
     <Provider store={store}>
       <Router>
-        <div className="App" dir="rtl">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-arabic" dir="rtl">
           <Header />
-          <main className="main-content">
+          <main className="min-h-screen pt-16">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />

@@ -27,14 +27,25 @@ const Home = () => {
       <Hero />
       <TeacherIntro />
       
-      <section id="courses" className="courses-section">
-        <div className="container">
-          <h2>الكورسات المتاحة</h2>
+      <section id="courses" className="py-20 bg-white dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              📚 الكورسات المتاحة
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              اختر الصف الدراسي المناسب لك وابدأ رحلة التعلم مع الأستاذ مجدي جمال
+            </p>
+            <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-secondary-500 mx-auto rounded-full mt-4"></div>
+          </div>
           
           {loading ? (
-            <div className="loading">جاري التحميل...</div>
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+              <span className="mr-3 text-gray-600 dark:text-gray-400">جاري التحميل...</span>
+            </div>
           ) : (
-            <div className="courses-grid">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {grades.map(grade => {
                 const course = courses.find(c => c.grade === grade);
                 return (

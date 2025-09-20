@@ -6,7 +6,9 @@ export const fetchTasksByGrade = createAsyncThunk(
   async (gradeParam, { rejectWithValue }) => {
     try {
       const response = await getTasksByGrade(gradeParam);
-      return { gradeParam, tasks: response };
+      // Handle API response structure
+      const tasks = response?.data || response || [];
+      return { gradeParam, tasks };
     } catch (error) {
       return rejectWithValue(error.message);
     }

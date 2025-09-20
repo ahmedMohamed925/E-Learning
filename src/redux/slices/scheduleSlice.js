@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getSchedule } from '../../api/schedule.js';
+import { getSchedule, getScheduleByGrade } from '../../api/schedule.js';
 
 export const fetchSchedule = createAsyncThunk(
   'schedule/fetchSchedule',
@@ -13,8 +13,21 @@ export const fetchSchedule = createAsyncThunk(
   }
 );
 
+export const fetchScheduleByGrade = createAsyncThunk(
+  'schedule/fetchScheduleByGrade',
+  async (gradeParam, { rejectWithValue }) => {
+    try {
+      const response = await getScheduleByGrade(gradeParam);
+      return { gradeParam, schedule: response };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const initialState = {
   list: [],
+  byGrade: {},
   loading: false,
   error: null,
 };
@@ -38,6 +51,19 @@ const scheduleSlice = createSlice({
         state.list = action.payload;
       })
       .addCase(fetchSchedule.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Schedule By Grade
+      .addCase(fetchScheduleByGrade.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchScheduleByGrade.fulfilled, (state, action) => {
+        state.loading = false;
+        state.byGrade[action.payload.gradeParam] = action.payload.schedule;
+      })
+      .addCase(fetchScheduleByGrade.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { login as loginApi, signup as signupApi, verifyOtp as verifyOtpApi } from '../../api/auth.js';
+import { login as loginApi, signup as signupApi, verifyOtp as verifyOtpApi, refreshToken as refreshTokenApi } from '../../api/auth.js';
+import { setTokenOnLogin, clearTokenTimestamp } from '../../utils/tokenManager.js';
 
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
@@ -9,6 +10,7 @@ export const loginUser = createAsyncThunk(
       if (response.token) {
         localStorage.setItem('authToken', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
+        setTokenOnLogin();
       }
       return response;
     } catch (error) {
@@ -37,6 +39,24 @@ export const verifyOtpUser = createAsyncThunk(
       if (response.token) {
         localStorage.setItem('authToken', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
+        setTokenOnLogin();
+      }
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const refreshToken = createAsyncThunk(
+  'auth/refreshToken',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await refreshTokenApi();
+      if (response.token) {
+        localStorage.setItem('authToken', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        setTokenOnLogin();
       }
       return response;
     } catch (error) {
@@ -67,6 +87,7 @@ const authSlice = createSlice({
       state.tempToken = null;
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
+      clearTokenTimestamp();
     },
     clearError: (state) => {
       state.error = null;
@@ -74,6 +95,10 @@ const authSlice = createSlice({
     updateProfile: (state, action) => {
       state.user = { ...state.user, ...action.payload };
       localStorage.setItem('user', JSON.stringify(state.user));
+    },
+    changePassword: (state, action) => {
+      // Password change is handled by backend, no state update needed
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {
@@ -123,9 +148,31 @@ const authSlice = createSlice({
       .addCase(verifyOtpUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      // Refresh Token
+      .addCase(refreshToken.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(refreshToken.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
+      })
+      .addCase(refreshToken.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        // If refresh token fails, logout user
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        clearTokenTimestamp();
       });
   },
 });
 
-export const { logout, clearError, updateProfile } = authSlice.actions;
+export const { logout, clearError, updateProfile, changePassword } = authSlice.actions;
 export default authSlice.reducer;

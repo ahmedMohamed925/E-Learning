@@ -3,11 +3,17 @@ import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import GradeNavbar from '../components/GradeNavbar.jsx';
 import LessonCard from '../components/LessonCard.jsx';
+import GradeProtectedRoute from '../components/GradeProtectedRoute.jsx';
 import { fetchLessonsByGrade } from '../redux/slices/lessonsSlice.js';
 import { fetchTasksByGrade } from '../redux/slices/tasksSlice.js';
 import { fetchQuizzesByGrade } from '../redux/slices/quizzesSlice.js';
-import { fetchSchedule } from '../redux/slices/scheduleSlice.js';
-import { reverseGradeMapping } from '../utils/gradeMapping.js';
+import { fetchScheduleByGrade } from '../redux/slices/scheduleSlice.js';
+import { 
+  reverseGradeMapping, 
+  lessonsGradeMapping,
+  tasksQuizzesGradeMapping,
+  scheduleGradeMapping
+} from '../utils/gradeMapping.js';
 import { formatDate } from '../utils/helpers.js';
 
 const GradePage = () => {
@@ -19,19 +25,24 @@ const GradePage = () => {
   const lessons = useSelector(state => state.lessons.byGrade[gradeSlug] || []);
   const tasks = useSelector(state => state.tasks.byGrade[gradeSlug] || []);
   const quizzes = useSelector(state => state.quizzes.byGrade[gradeSlug] || []);
-  const schedule = useSelector(state => state.schedule.list);
+  const schedule = useSelector(state => state.schedule.byGrade[gradeSlug] || []);
   const loading = useSelector(state => 
-    state.lessons.loading || state.tasks.loading || state.quizzes.loading
+    state.lessons.loading || state.tasks.loading || state.quizzes.loading || state.schedule.loading
   );
 
   useEffect(() => {
-    if (gradeSlug) {
-      dispatch(fetchLessonsByGrade(gradeSlug));
-      dispatch(fetchTasksByGrade(gradeSlug));
-      dispatch(fetchQuizzesByGrade(gradeSlug));
-      dispatch(fetchSchedule());
+    if (gradeSlug && gradeName) {
+      // استخدم الـ mapping الصحيح لكل API
+      const lessonsParam = lessonsGradeMapping[gradeName];
+      const tasksQuizzesParam = tasksQuizzesGradeMapping[gradeName];
+      const scheduleParam = scheduleGradeMapping[gradeName];
+      
+      dispatch(fetchLessonsByGrade(lessonsParam));
+      dispatch(fetchTasksByGrade(tasksQuizzesParam));
+      dispatch(fetchQuizzesByGrade(tasksQuizzesParam));
+      dispatch(fetchScheduleByGrade(scheduleParam));
     }
-  }, [dispatch, gradeSlug]);
+  }, [dispatch, gradeSlug, gradeName]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -149,42 +160,44 @@ const GradePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <div className="flex items-center space-x-2 space-x-reverse text-sm text-gray-500 dark:text-gray-400 mb-4">
-            <Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400">الرئيسية</Link>
-            <span>/</span>
-            <Link to="/grades" className="hover:text-primary-600 dark:hover:text-primary-400">الكورسات</Link>
-            <span>/</span>
-            <span className="text-gray-900 dark:text-white font-medium">{gradeName}</span>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-0">{gradeName}</h1>
-            <Link 
-              to="/grades" 
-              className="inline-flex items-center px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors duration-200 font-medium"
-            >
-              ← العودة للكورسات
-            </Link>
-          </div>
-        </div>
-
-        <GradeNavbar activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <div className="mt-8">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 ml-3"></div>
-              <span className="text-gray-600 dark:text-gray-400">جاري التحميل...</span>
+    <GradeProtectedRoute requiredGradeSlug={gradeSlug}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <div className="flex items-center space-x-2 space-x-reverse text-sm text-gray-500 dark:text-gray-400 mb-4">
+              <Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400">الرئيسية</Link>
+              <span>/</span>
+              <Link to="/grades" className="hover:text-primary-600 dark:hover:text-primary-400">الكورسات</Link>
+              <span>/</span>
+              <span className="text-gray-900 dark:text-white font-medium">{gradeName}</span>
             </div>
-          ) : (
-            renderTabContent()
-          )}
+            
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-0">{gradeName}</h1>
+              <Link 
+                to="/grades" 
+                className="inline-flex items-center px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors duration-200 font-medium"
+              >
+                ← العودة للكورسات
+              </Link>
+            </div>
+          </div>
+
+          <GradeNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+
+          <div className="mt-8">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 ml-3"></div>
+                <span className="text-gray-600 dark:text-gray-400">جاري التحميل...</span>
+              </div>
+            ) : (
+              renderTabContent()
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </GradeProtectedRoute>
   );
 };
 

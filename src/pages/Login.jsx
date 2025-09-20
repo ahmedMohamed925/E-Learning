@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, clearError } from '../redux/slices/authSlice.js';
 import { validateEmail, validatePassword } from '../utils/helpers.js';
+import MathBackground from '../components/MathBackground';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -65,8 +66,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center relative">
+      <MathBackground />
+      <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">تسجيل الدخول</h1>

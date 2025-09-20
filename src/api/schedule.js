@@ -4,6 +4,10 @@ export const getSchedule = async () => {
   return await apiGet('/api/schedule/');
 };
 
+export const getScheduleByGrade = async (gradeParam) => {
+  return await apiGet(`/api/schedule/grade/${gradeParam}`);
+};
+
 export const createSchedule = async (scheduleData) => {
   return await apiPost('/api/schedule/', scheduleData);
 };

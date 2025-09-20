@@ -6,7 +6,9 @@ export const fetchQuizzesByGrade = createAsyncThunk(
   async (gradeParam, { rejectWithValue }) => {
     try {
       const response = await getQuizzesByGrade(gradeParam);
-      return { gradeParam, quizzes: response };
+      // Handle API response structure
+      const quizzes = response?.data || response || [];
+      return { gradeParam, quizzes };
     } catch (error) {
       return rejectWithValue(error.message);
     }

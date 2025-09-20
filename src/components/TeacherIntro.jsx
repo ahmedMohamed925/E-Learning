@@ -51,9 +51,9 @@ const TeacherIntro = () => {
           <div className="relative animate-slide-down">
             <div className="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-secondary-500/20 rounded-2xl transform rotate-3"></div>
             <img 
-              src="https://images.pexels.com/photos/5212345/pexels-photo-5212345.jpeg?auto=compress&cs=tinysrgb&w=500&h=750&dpr=1" 
+              src="/imageTeacher2.jpg" 
               alt="الأستاذ مجدي جمال" 
-              className="relative w-full h-96 object-cover rounded-2xl shadow-2xl transform -rotate-1 hover:rotate-0 transition-transform duration-500"
+              className="relative w-full h-[450px] object-cover object-center rounded-2xl shadow-2xl transform -rotate-1 hover:rotate-0 transition-transform duration-500"
             />
             <div className="absolute -bottom-4 -right-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg">
               <div className="flex items-center space-x-2 space-x-reverse">

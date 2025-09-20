@@ -27,3 +27,21 @@ export const requestPasswordReset = async (email) => {
 export const performPasswordReset = async (resetData) => {
   return await apiPost('/api/users/reset-password/perform', resetData);
 };
+
+// Refresh Token endpoint
+export const refreshToken = async (refreshToken) => {
+  return await apiPost('/auth/refresh-token', { refreshToken });
+};
+
+// Forgot Password endpoints
+export const forgotPassword = async (email) => {
+  return await apiPost('/auth/forgot-password', { email });
+};
+
+export const resetPassword = async (token, newPassword, confirmPassword) => {
+  return await apiPost('/auth/reset-password', { 
+    token, 
+    newPassword, 
+    confirmPassword 
+  });
+};

@@ -5,7 +5,6 @@ import { createLessonAdmin, updateLessonAdmin, deleteLessonAdmin } from '../redu
 import { fetchLessonsByGrade } from '../redux/slices/lessonsSlice.js';
 import { showToast } from '../utils/helpers.js';
 import { gradeMapping } from '../utils/gradeMapping.js';
-
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('lessons');
   const [showModal, setShowModal] = useState(false);

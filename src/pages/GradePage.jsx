@@ -139,34 +139,46 @@ const GradePage = () => {
 
   if (!gradeName) {
     return (
-      <div className="container">
-        <h1>الصف غير موجود</h1>
-        <Link to="/grades" className="btn btn-primary">العودة للكورسات</Link>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">الصف غير موجود</h1>
+          <Link to="/grades" className="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium">العودة للكورسات</Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="grade-page">
-      <div className="container">
-        <div className="page-header">
-          <div className="breadcrumb">
-            <Link to="/">الرئيسية</Link>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <div className="flex items-center space-x-2 space-x-reverse text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400">الرئيسية</Link>
             <span>/</span>
-            <Link to="/grades">الكورسات</Link>
+            <Link to="/grades" className="hover:text-primary-600 dark:hover:text-primary-400">الكورسات</Link>
             <span>/</span>
-            <span>{gradeName}</span>
+            <span className="text-gray-900 dark:text-white font-medium">{gradeName}</span>
           </div>
           
-          <h1>{gradeName}</h1>
-          <Link to="/grades" className="btn btn-secondary">العودة للكورسات</Link>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-0">{gradeName}</h1>
+            <Link 
+              to="/grades" 
+              className="inline-flex items-center px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors duration-200 font-medium"
+            >
+              ← العودة للكورسات
+            </Link>
+          </div>
         </div>
 
         <GradeNavbar activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <div className="tab-content">
+        <div className="mt-8">
           {loading ? (
-            <div className="loading">جاري التحميل...</div>
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 ml-3"></div>
+              <span className="text-gray-600 dark:text-gray-400">جاري التحميل...</span>
+            </div>
           ) : (
             renderTabContent()
           )}

@@ -59,7 +59,7 @@ export async function apiPut(path, body) {
     });
     
     if (res.status === 401) {
-      localStorage.removeRemoveItem('authToken');
+      localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       window.location.href = '/login';
       return;

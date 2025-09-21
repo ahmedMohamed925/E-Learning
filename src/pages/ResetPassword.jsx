@@ -3,6 +3,9 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { resetPassword } from '../api/auth.js';
 import MathBackground from '../components/MathBackground.jsx';
 
+
+
+
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

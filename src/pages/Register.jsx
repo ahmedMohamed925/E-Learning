@@ -12,7 +12,8 @@ const Register = () => {
     confirmPassword: '',
     grade: '',
     phone: '',
-    location: ''
+    location: '',
+    code: ''
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -60,8 +61,13 @@ const Register = () => {
       newErrors.phone = 'رقم الهاتف غير صحيح (يجب أن يبدأ بـ 010, 011, 012, أو 015)';
     }
 
+
     if (!formData.location) {
       newErrors.location ='المركز مطلوب';
+    }
+
+    if (!formData.code.trim()) {
+      newErrors.code = 'كود الطالب مطلوب';
     }
 
     return newErrors;
@@ -103,7 +109,8 @@ const Register = () => {
         password: formData.password,
         grade: formData.grade,
         phone: formData.phone,
-        location: formData.location
+        location: formData.location,
+        code: formData.code
       };
       
       const response = await dispatch(signupUser(userData)).unwrap();
@@ -280,6 +287,27 @@ const Register = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="form-group">
+              <label htmlFor="code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                كود الطالب
+              </label>
+              <input
+                id="code"
+                name="code"
+                type="text"
+                value={formData.code}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors duration-200 ${
+                  errors.code 
+                    ? 'border-error-500 focus:ring-error-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                } dark:bg-gray-700 dark:text-white`}
+                placeholder="أدخل كود الطالب الذي حصلت عليه من الإدارة"
+              />
+              {errors.code && (
+                <span className="text-error-600 dark:text-error-400 text-sm mt-1 block">{errors.code}</span>
+              )}
+            </div>
             <div className="form-group">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 الاسم الرباعي

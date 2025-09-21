@@ -147,12 +147,10 @@ const ProfileInfo = ({ user }) => (
           className="w-32 h-32 rounded-full border-4 border-primary-200 dark:border-primary-800 object-cover"
         />
       </div>
-      
       <div className="flex-1 text-center md:text-right">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
           {user?.name || 'اسم الطالب'}
         </h2>
-        
         <div className="space-y-3">
           <div className="flex items-center justify-center md:justify-start space-x-2 space-x-reverse">
             <span className="text-xl">📧</span>
@@ -160,14 +158,18 @@ const ProfileInfo = ({ user }) => (
               {user?.email || 'البريد الإلكتروني'}
             </span>
           </div>
-          
           <div className="flex items-center justify-center md:justify-start space-x-2 space-x-reverse">
             <span className="text-xl">🎓</span>
             <span className="text-gray-600 dark:text-gray-300">
               {user?.grade || 'الصف الدراسي'}
             </span>
           </div>
-          
+          <div className="flex items-center justify-center md:justify-start space-x-2 space-x-reverse">
+            <span className="text-xl">🔑</span>
+            <span className="text-gray-600 dark:text-gray-300">
+              كود الطالب: {user?.code || '---'}
+            </span>
+          </div>
           <div className="flex items-center justify-center md:justify-start space-x-2 space-x-reverse">
             <span className="text-xl">📅</span>
             <span className="text-gray-600 dark:text-gray-300">
@@ -175,8 +177,6 @@ const ProfileInfo = ({ user }) => (
             </span>
           </div>
         </div>
-        
-        
       </div>
     </div>
   </div>

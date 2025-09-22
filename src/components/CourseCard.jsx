@@ -66,31 +66,8 @@ const CourseCard = ({ grade, description, lessonCount = 0 }) => {
           {description || `دروس شاملة في مادة الرياضة ${grade} مع شرح مفصل وأمثلة تطبيقية`}
         </p>
         
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2 space-x-reverse text-gray-500 dark:text-gray-400">
-            <span className="text-lg">📚</span>
-            <span className="text-sm font-medium">{lessonCount} درس</span>
-          </div>
-          <div className="flex items-center space-x-2 space-x-reverse text-gray-500 dark:text-gray-400">
-            <span className="text-lg">⏱️</span>
-            <span className="text-sm font-medium">{lessonCount * 45} دقيقة</span>
-          </div>
-        </div>
         
-        <div className="flex items-center space-x-3 space-x-reverse mb-4">
-          <div className="flex -space-x-2 space-x-reverse">
-            <div className="w-8 h-8 bg-primary-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-xs font-bold">
-              أ
-            </div>
-            <div className="w-8 h-8 bg-secondary-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-xs font-bold">
-              ب
-            </div>
-            <div className="w-8 h-8 bg-success-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-xs font-bold">
-              ج
-            </div>
-          </div>
-          <span className="text-sm text-gray-500 dark:text-gray-400">+{Math.floor(Math.random() * 100) + 50} طالب</span>
-        </div>
+       
       </div>
       
       <div className="p-6 pt-0">

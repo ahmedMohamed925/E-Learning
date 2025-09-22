@@ -10,6 +10,7 @@ const QuizzesManagement = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    subject: '',
     grade: '',
     timeLimit: 30,
     totalMarks: 100,
@@ -42,8 +43,30 @@ const QuizzesManagement = () => {
   const handleCreateQuiz = async (e) => {
     e.preventDefault();
     try {
-      await createQuiz(formData);
-      setFormData({ title: '', description: '', grade: '', timeLimit: 30, totalMarks: 100, questions: [] });
+      // تجهيز الأسئلة والخيارات بالشكل المطلوب للباك اند
+      const preparedQuestions = formData.questions.map(q => {
+        let prepared = { ...q };
+        if (q.type === 'اختر من متعدد') {
+          prepared.options = q.options.map((opt, idx) => ({
+            text: opt,
+            isCorrect: idx === q.correctAnswer
+          }));
+          // لا ترسل correctAnswer مباشرة
+          delete prepared.correctAnswer;
+        } else if (q.type === 'صح وخطأ') {
+          // correctAnswer كـ boolean فقط
+          prepared.correctAnswer = q.correctAnswer === 0 ? true : false;
+          prepared.options = [];
+        }
+        return prepared;
+      });
+      const dataToSend = {
+        ...formData,
+        questions: preparedQuestions
+      };
+      console.log('📤 البيانات المرسلة:', dataToSend);
+      await createQuiz(dataToSend);
+      setFormData({ title: '', description: '', subject: '', grade: '', timeLimit: 30, totalMarks: 100, questions: [] });
       setShowCreateForm(false);
       fetchQuizzes();
     } catch (error) {
@@ -54,9 +77,29 @@ const QuizzesManagement = () => {
   const handleUpdateQuiz = async (e) => {
     e.preventDefault();
     try {
-      await updateQuiz(editingQuiz.id, formData);
+      // تجهيز الأسئلة والخيارات بالشكل المطلوب للباك اند
+      const preparedQuestions = formData.questions.map(q => {
+        let prepared = { ...q };
+        if (q.type === 'اختر من متعدد') {
+          prepared.options = q.options.map((opt, idx) => ({
+            text: opt,
+            isCorrect: idx === q.correctAnswer
+          }));
+          delete prepared.correctAnswer;
+        } else if (q.type === 'صح وخطأ') {
+          prepared.correctAnswer = q.correctAnswer === 0 ? true : false;
+          prepared.options = [];
+        }
+        return prepared;
+      });
+      const dataToSend = {
+        ...formData,
+        questions: preparedQuestions
+      };
+      console.log('📤 البيانات المرسلة:', dataToSend);
+      await updateQuiz(editingQuiz._id, dataToSend);
       setEditingQuiz(null);
-      setFormData({ title: '', description: '', grade: '', timeLimit: 30, totalMarks: 100, questions: [] });
+      setFormData({ title: '', description: '', subject: '', grade: '', timeLimit: 30, totalMarks: 100, questions: [] });
       fetchQuizzes();
     } catch (error) {
       console.error('خطأ في تحديث الكويز:', error);
@@ -79,10 +122,26 @@ const QuizzesManagement = () => {
     setFormData({
       title: quiz.title,
       description: quiz.description,
+      subject: quiz.subject || '',
       grade: quiz.grade,
       timeLimit: quiz.timeLimit || 30,
       totalMarks: quiz.totalMarks || 100,
-      questions: quiz.questions || []
+      questions: (quiz.questions || []).map(q => {
+        let correctIdx;
+        let opts = [];
+        if (q.type === 'اختر من متعدد') {
+          opts = Array.isArray(q.options) ? q.options.map(opt => (typeof opt === 'object' && opt !== null && 'text' in opt ? opt.text : opt)) : [];
+          correctIdx = Array.isArray(q.options) ? q.options.findIndex(opt => (typeof opt === 'object' && opt !== null && opt.isCorrect === true)) : 0;
+        } else if (q.type === 'صح وخطأ') {
+          opts = ['صح', 'خطأ'];
+          correctIdx = q.correctAnswer === true ? 0 : 1;
+        }
+        return {
+          ...q,
+          options: opts,
+          correctAnswer: correctIdx >= 0 ? correctIdx : 0
+        };
+      })
     });
     setShowCreateForm(true);
   };
@@ -96,8 +155,9 @@ const QuizzesManagement = () => {
   const addQuestion = () => {
     const newQuestion = {
       id: Date.now(),
-      question: '',
-      options: ['', '', '', ''],
+      questionText: '',
+      type: 'اختر من متعدد',
+      options: ['A', 'B', 'C', 'D'],
       correctAnswer: 0,
       points: 5
     };
@@ -109,6 +169,16 @@ const QuizzesManagement = () => {
 
   const updateQuestion = (index, field, value) => {
     const updatedQuestions = [...formData.questions];
+    // إذا تم تغيير النوع، عدل الخيارات تلقائياً
+    if (field === 'type') {
+      if (value === 'اختر من متعدد') {
+        updatedQuestions[index].options = ['A', 'B', 'C', 'D'];
+        updatedQuestions[index].correctAnswer = 0;
+      } else if (value === 'صح وخطأ') {
+        updatedQuestions[index].options = ['صح', 'خطأ'];
+        updatedQuestions[index].correctAnswer = 0;
+      }
+    }
     updatedQuestions[index][field] = value;
     setFormData({ ...formData, questions: updatedQuestions });
   };
@@ -165,6 +235,18 @@ const QuizzesManagement = () => {
           <form onSubmit={editingQuiz ? handleUpdateQuiz : handleCreateQuiz} className="space-y-6">
             {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  المادة
+                </label>
+                <input
+                  type="text"
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   عنوان الكويز
@@ -264,34 +346,73 @@ const QuizzesManagement = () => {
                   </div>
 
                   <div className="space-y-3">
+
                     <input
                       type="text"
-                      placeholder="نص السؤال"
-                      value={question.question}
-                      onChange={(e) => updateQuestion(questionIndex, 'question', e.target.value)}
+                      placeholder="نص السؤال (يمكنك وضع لينك صورة أو نص عادي)"
+                      value={question.questionText}
+                      onChange={(e) => updateQuestion(questionIndex, 'questionText', e.target.value)}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {question.options.map((option, optionIndex) => (
-                        <div key={optionIndex} className="flex items-center space-x-2 space-x-reverse">
-                          <input
-                            type="radio"
-                            name={`correct-${questionIndex}`}
-                            checked={question.correctAnswer === optionIndex}
-                            onChange={() => updateQuestion(questionIndex, 'correctAnswer', optionIndex)}
-                            className="text-purple-600"
-                          />
-                          <input
-                            type="text"
-                            placeholder={`الخيار ${optionIndex + 1}`}
-                            value={option}
-                            onChange={(e) => updateQuestionOption(questionIndex, optionIndex, e.target.value)}
-                            className="flex-1 p-2 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
-                          />
-                        </div>
-                      ))}
+                    {/* عرض صورة إذا كان نص السؤال لينك صورة */}
+                    {/^https?:\/\/.*\.(png|jpg|jpeg|gif|webp)$/i.test(question.questionText.trim()) && (
+                      <div className="my-2 flex justify-center">
+                        <img src={question.questionText.trim()} alt="سؤال صورة" className="max-h-48 rounded border" />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">نوع السؤال</label>
+                      <select
+                        value={question.type}
+                        onChange={(e) => updateQuestion(questionIndex, 'type', e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                      >
+                        <option value="اختر من متعدد">اختر من متعدد</option>
+                        <option value="صح وخطأ">صح وخطأ</option>
+                      </select>
                     </div>
+
+                    {question.type === 'اختر من متعدد' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {['A', 'B', 'C', 'D'].map((label, optionIndex) => (
+                          <div key={optionIndex} className="flex items-center space-x-2 space-x-reverse">
+                            <input
+                              type="radio"
+                              name={`correct-${questionIndex}`}
+                              checked={question.correctAnswer === optionIndex}
+                              onChange={() => updateQuestion(questionIndex, 'correctAnswer', optionIndex)}
+                              className="text-purple-600"
+                            />
+                            <span className="font-bold text-gray-700 dark:text-gray-300">{label}.</span>
+                            <input
+                              type="text"
+                              placeholder={`الخيار ${label}`}
+                              value={question.options[optionIndex]}
+                              onChange={(e) => updateQuestionOption(questionIndex, optionIndex, e.target.value)}
+                              className="flex-1 p-2 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {question.type === 'صح وخطأ' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {['صح', 'خطأ'].map((label, optionIndex) => (
+                          <div key={optionIndex} className="flex items-center space-x-2 space-x-reverse">
+                            <input
+                              type="radio"
+                              name={`correct-${questionIndex}`}
+                              checked={question.correctAnswer === optionIndex}
+                              onChange={() => updateQuestion(questionIndex, 'correctAnswer', optionIndex)}
+                              className="text-purple-600"
+                            />
+                            <span className="font-bold text-gray-700 dark:text-gray-300">{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     <input
                       type="number"
@@ -394,7 +515,7 @@ const QuizzesManagement = () => {
                         ✏️ تحرير
                       </button>
                       <button
-                        onClick={() => handleDeleteQuiz(quiz.id)}
+                        onClick={() => handleDeleteQuiz(quiz._id || quiz.id)}
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                       >
                         🗑️ حذف

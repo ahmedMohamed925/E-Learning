@@ -413,14 +413,12 @@ const StudentSchedule = ({
   };
 
   const getAllEvents = () => {
-    if (!calendarData?.calendar) return [];
-    
+    const calendarArr = Array.isArray(calendarData?.calendar) ? calendarData.calendar : [];
     const allEvents = [];
-    calendarData.calendar.forEach(dayData => {
+    calendarArr.forEach(dayData => {
       const date = dayData.date;
-      
       // إضافة الجداول الدراسية
-      dayData.schedules?.forEach(schedule => {
+      Array.isArray(dayData.schedules) && dayData.schedules.forEach(schedule => {
         allEvents.push({
           ...schedule,
           date,
@@ -429,9 +427,8 @@ const StudentSchedule = ({
           displayTime: `${schedule.timeFrom} - ${schedule.timeTo}`
         });
       });
-
       // إضافة المهام
-      dayData.tasks?.forEach(task => {
+      Array.isArray(dayData.tasks) && dayData.tasks.forEach(task => {
         allEvents.push({
           ...task,
           date,
@@ -443,9 +440,8 @@ const StudentSchedule = ({
           })
         });
       });
-
       // إضافة الاختبارات
-      dayData.quizzes?.forEach(quiz => {
+      Array.isArray(dayData.quizzes) && dayData.quizzes.forEach(quiz => {
         allEvents.push({
           ...quiz,
           date,
@@ -454,9 +450,8 @@ const StudentSchedule = ({
           displayTime: `${quiz.duration} دقيقة`
         });
       });
-
       // إضافة الدروس
-      dayData.lessons?.forEach(lesson => {
+      Array.isArray(dayData.lessons) && dayData.lessons.forEach(lesson => {
         allEvents.push({
           ...lesson,
           date,
@@ -469,7 +464,6 @@ const StudentSchedule = ({
         });
       });
     });
-
     return allEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
   };
 

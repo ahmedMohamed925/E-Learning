@@ -1,7 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { getCurrentUser } from '../utils/getCurrentUser.js';
 import { useParams, useNavigate } from 'react-router-dom';
 import { startQuiz, submitQuiz } from '../api/quizzes.js';
 import { showToast } from '../utils/helpers.js';
+
+// دالة تتحقق إذا كان النص رابط (http/https)
+function isImageUrl(text) {
+  if (!text) return false;
+  return /^https?:\/\//i.test(text.trim());
+}
+
+// دالة لتحويل أي رابط Google Drive file/d/.../view إلى رابط مباشر للعرض
+function getDisplayImageUrl(url) {
+  if (!url) return url;
+  const driveMatch = url.match(/^https?:\/\/drive\.google\.com\/file\/d\/([\w-]+)\/view/);
+  if (driveMatch) {
+    const fileId = driveMatch[1];
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  }
+  return url;
+}
 
 const QuizPage = () => {
   const { quizId } = useParams();
@@ -23,7 +41,6 @@ const QuizPage = () => {
       try {
         setIsLoading(true);
         const response = await startQuiz(quizId);
-        
         if (response.data) {
           setQuiz(response.data.quiz);
           setQuestions(response.data.questions);
@@ -31,15 +48,32 @@ const QuizPage = () => {
           setQuizState('instructions');
         }
       } catch (error) {
-        console.error('خطأ في تحميل الكويز:', error);
-        showToast(error.response?.data?.message || 'حدث خطأ في تحميل الكويز', 'error');
-        navigate('/grades');
+        // إذا كان هناك previousResult في الريسبونس، اعرض الرسالة الحقيقية
+        const prevResult = error.response?.data?.previousResult;
+        const msg = error.response?.data?.message || error.message || 'حدث خطأ في تحميل الكويز';
+        if (prevResult) {
+          setQuizState('results');
+          setQuizResult({ result: { score: prevResult.score, grade: prevResult.grade, quiz: { title: '' } }, answers: [], statistics: null });
+          // اعرض الرسالة الحقيقية فقط
+          showToast(msg, 'error');
+        } else {
+          showToast(msg, 'error');
+          navigate('/grades');
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     if (quizId) {
+      // السماح للطالب أو المعلم أو الأدمن بحل الكويز
+      const user = getCurrentUser();
+      if (!user) {
+        showToast('يجب تسجيل الدخول أولاً', 'error');
+        navigate('/login');
+        return;
+      }
+      // لا تمنع أي دور من حل الكويز
       loadQuiz();
     }
   }, [quizId, navigate]);
@@ -55,6 +89,22 @@ const QuizPage = () => {
             return 0;
           }
           return prev - 1;
+
+        // دالة تتحقق إذا كان النص رابط (http/https)
+        function isImageUrl(text) {
+          if (!text) return false;
+          return /^https?:\/\//i.test(text.trim());
+        }
+        // دالة لتحويل أي رابط Google Drive file/d/.../view إلى رابط مباشر للعرض
+        function getDisplayImageUrl(url) {
+          if (!url) return url;
+          const driveMatch = url.match(/^https?:\/\/drive\.google\.com\/file\/d\/([\w-]+)\/view/);
+          if (driveMatch) {
+            const fileId = driveMatch[1];
+            return `https://drive.google.com/uc?export=view&id=${fileId}`;
+          }
+          return url;
+        }
         });
       }, 1000);
     }
@@ -100,12 +150,22 @@ const QuizPage = () => {
       // إعداد البيانات للإرسال بالتنسيق الذي يتوقعه الـ backend
       const answersArray = questions.map((question, index) => {
         const userAnswer = answers[index];
-        return userAnswer !== undefined && userAnswer !== null ? userAnswer : "";
+        if (question.type === 'اختر من متعدد' && Array.isArray(question.options)) {
+          // اجلب كل القيم المسموحة (_id)
+          const allowed = question.options.map(opt => typeof opt === 'object' && opt !== null ? opt._id : opt);
+          // إذا كانت الإجابة من ضمن الخيارات، أرسلها، وإلا أرسل فارغ
+          return allowed.includes(userAnswer) ? userAnswer : "";
+        } else if (question.type === 'صح وخطأ') {
+          return userAnswer === 'صح' || userAnswer === 'خطأ' ? userAnswer : "";
+        } else {
+          return userAnswer !== undefined && userAnswer !== null ? userAnswer : "";
+        }
       });
 
-      // التأكد من أن المصفوفة ليست فارغة
-      if (!Array.isArray(answersArray) || answersArray.length === 0) {
-        showToast('لا توجد أسئلة للإجابة عليها', 'error');
+      // تحقق أن جميع الأسئلة تم الإجابة عليها فعلياً (لا يوجد إجابة فارغة)
+      const allAnswered = answersArray.every(ans => ans !== "" && ans !== undefined && ans !== null);
+      if (!allAnswered) {
+        showToast('يجب الإجابة على جميع الأسئلة قبل الإرسال', 'error');
         setQuizState('active');
         setIsLoading(false);
         return;
@@ -115,11 +175,6 @@ const QuizPage = () => {
         answers: answersArray,
         startedAt: quizStartTime || new Date().toISOString()
       };
-
-      console.log('Questions:', questions.length);
-      console.log('Answers object:', answers);
-      console.log('Final answers array:', answersArray);
-      console.log('Final submission data:', JSON.stringify(submissionData, null, 2));
 
       // إرسال البيانات بالتنسيق الصحيح
       const response = await submitQuiz(quizId, submissionData);
@@ -419,8 +474,39 @@ const QuizContent = ({
 // مكون السؤال
 const QuestionCard = ({ question, questionIndex, userAnswer, onAnswerChange }) => {
   const handleAnswerSelect = (answer) => {
-    onAnswerChange(questionIndex, answer);
+    let answerToStore = answer;
+    if (question.type === 'اختر من متعدد' && typeof answer === 'object' && answer !== null) {
+      answerToStore = answer._id;
+    }
+    console.log(
+      `اختيار المستخدم للسؤال رقم ${questionIndex + 1} (${question.type}):`,
+      answerToStore
+    );
+    onAnswerChange(questionIndex, answerToStore);
   };
+
+
+
+  // دالة تتحقق إذا كان النص رابط (http/https)
+  function isImageUrl(text) {
+    if (!text) return false;
+    return /^https?:\/\//i.test(text.trim());
+  }
+  // دالة لتحويل أي رابط Google Drive file/d/.../view إلى رابط مباشر للعرض
+  function getDisplayImageUrl(url) {
+    if (!url) return url;
+    const driveMatch = url.match(/^https?:\/\/drive\.google\.com\/file\/d\/([\w-]+)\/view/);
+    if (driveMatch) {
+      const fileId = driveMatch[1];
+      return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    }
+    return url;
+  }
+
+  const [imgError, setImgError] = React.useState(false);
+
+  // استخراج رابط الصورة النهائي (يدعم Google Drive)
+  const displayImageUrl = getDisplayImageUrl(question.questionText);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
@@ -433,11 +519,22 @@ const QuestionCard = ({ question, questionIndex, userAnswer, onAnswerChange }) =
             {question.points} نقطة
           </span>
         </div>
-        
-        <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-          {question.questionText}
-        </p>
-        
+        {/* عرض نص السؤال كصورة إذا كان لينك صورة أو Google Drive */}
+        {isImageUrl(question.questionText) && !imgError ? (
+          <div className="flex justify-center my-4">
+            <img
+              src={displayImageUrl}
+              alt={`سؤال ${questionIndex + 1}`}
+              className="max-w-full max-h-96 rounded-lg border border-gray-200 dark:border-gray-700 shadow"
+              loading="lazy"
+              onError={() => setImgError(true)}
+            />
+          </div>
+        ) : (
+          <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+            {question.questionText}
+          </p>
+        )}
         {question.explanation && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             {question.explanation}
@@ -452,7 +549,7 @@ const QuestionCard = ({ question, questionIndex, userAnswer, onAnswerChange }) =
               <label
                 key={option._id || index}
                 className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-colors duration-200 ${
-                  userAnswer === option.text
+                  userAnswer === option._id
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                     : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                 }`}
@@ -460,17 +557,17 @@ const QuestionCard = ({ question, questionIndex, userAnswer, onAnswerChange }) =
                 <input
                   type="radio"
                   name={`question-${questionIndex}`}
-                  value={option.text}
-                  checked={userAnswer === option.text}
-                  onChange={() => handleAnswerSelect(option.text)}
+                  value={option._id}
+                  checked={userAnswer === option._id}
+                  onChange={() => handleAnswerSelect(option)}
                   className="sr-only"
                 />
                 <div className={`w-5 h-5 rounded-full border-2 ml-3 flex-shrink-0 ${
-                  userAnswer === option.text
+                  userAnswer === option._id
                     ? 'border-primary-500 bg-primary-500'
                     : 'border-gray-300 dark:border-gray-600'
                 }`}>
-                  {userAnswer === option.text && (
+                  {userAnswer === option._id && (
                     <div className="w-full h-full rounded-full bg-white scale-50"></div>
                   )}
                 </div>
@@ -560,6 +657,13 @@ const QuestionCard = ({ question, questionIndex, userAnswer, onAnswerChange }) =
 
 // مكون نتائج الكويز
 const QuizResults = ({ result, onBackToGrades }) => {
+  // لتتبع أخطاء تحميل الصور لكل سؤال
+  const [imgErrors, setImgErrors] = React.useState({});
+
+  // دالة لتحديث حالة الخطأ عند فشل تحميل صورة سؤال
+  const handleImgError = (index) => {
+    setImgErrors(prev => ({ ...prev, [index]: true }));
+  };
   const getGradeColor = (percentage) => {
     if (percentage >= 90) return 'text-green-600';
     if (percentage >= 80) return 'text-blue-600';
@@ -672,9 +776,26 @@ const QuizResults = ({ result, onBackToGrades }) => {
                   </div>
                 </div>
 
-                <p className="text-gray-700 dark:text-gray-300 mb-4">
-                  {answer.questionText}
-                </p>
+                {/* عرض نص السؤال كصورة إذا كان لينك صورة أو Google Drive، أو كنص إذا لم يكن كذلك */}
+                {isImageUrl(answer.questionText) && !(imgErrors[index]) ? (
+                  <div className="flex flex-col items-center my-4">
+                    <img
+                      src={getDisplayImageUrl(answer.questionText)}
+                      alt={`سؤال ${answer.questionIndex}`}
+                      className="max-w-full max-h-96 rounded-lg border-2 border-primary-400 dark:border-primary-700 shadow mb-2"
+                      loading="lazy"
+                      onError={() => handleImgError(index)}
+                    />
+                  </div>
+                ) : imgErrors[index] ? (
+                  <div className="my-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-center border border-red-300 dark:border-red-700">
+                    <span className="text-red-700 dark:text-red-200 font-medium">تعذر تحميل صورة السؤال، يرجى مراجعة الرابط.</span>
+                  </div>
+                ) : (
+                  <p className="text-gray-700 dark:text-gray-300 mb-4">
+                    {answer.questionText}
+                  </p>
+                )}
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
@@ -683,7 +804,6 @@ const QuizResults = ({ result, onBackToGrades }) => {
                       {answer.userAnswer || 'لم يتم الإجابة'}
                     </p>
                   </div>
-                  
                   {!answer.isCorrect && (
                     <div>
                       <span className="text-sm text-gray-500 dark:text-gray-400">الإجابة الصحيحة:</span>

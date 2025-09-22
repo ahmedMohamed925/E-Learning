@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import GradeNavbar from '../components/GradeNavbar.jsx';
+import EducationalMaterialsByGrade from '../components/EducationalMaterialsByGrade.jsx';
 import LessonCard from '../components/LessonCard.jsx';
 import GradeProtectedRoute from '../components/GradeProtectedRoute.jsx';
 import { fetchLessonsByGrade } from '../redux/slices/lessonsSlice.js';
@@ -20,6 +21,7 @@ const GradePage = () => {
   const { gradeSlug } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('lessons');
+  const [lessonsDisplayMode, setLessonsDisplayMode] = useState('grid'); // grid | list | masonry
   const dispatch = useDispatch();
   
   const gradeName = reverseGradeMapping[gradeSlug];
@@ -55,16 +57,54 @@ const GradePage = () => {
     switch (activeTab) {
       case 'lessons':
         return (
-          <div className="lessons-grid">
+          <div>
+            <div className="flex justify-end mb-6 gap-2"></div>
+            {/* عرض الدروس حسب النمط */}
             {lessons.length > 0 ? (
-              lessons.map(lesson => (
-                <LessonCard key={lesson.id} lesson={lesson} />
-              ))
+              <>
+                {lessonsDisplayMode === 'grid' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {lessons.map(lesson => (
+                      <LessonCard key={lesson.id} lesson={lesson} />
+                    ))}
+                  </div>
+                )}
+                {lessonsDisplayMode === 'list' && (
+                  <div className="flex flex-col gap-4">
+                    {lessons.map(lesson => (
+                      <div key={lesson.id} className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 flex items-center gap-6 border border-gray-100 dark:border-gray-700">
+                        <div className="flex-1">
+                          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{lesson.title}</h2>
+                          <p className="text-gray-600 dark:text-gray-300 mb-2">{lesson.description}</p>
+                          <span className="inline-block text-xs bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 rounded px-2 py-1">{lesson.subject}</span>
+                        </div>
+                        <Link to={`/lesson/${lesson.id}`} className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition">عرض الدرس</Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {lessonsDisplayMode === 'masonry' && (
+                  <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+                    {lessons.map(lesson => (
+                      <div key={lesson.id} className="mb-6 break-inside-avoid bg-white dark:bg-gray-800 rounded-xl shadow p-5 border border-gray-100 dark:border-gray-700">
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{lesson.title}</h2>
+                        <p className="text-gray-600 dark:text-gray-300 mb-2">{lesson.description}</p>
+                        <span className="inline-block text-xs bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 rounded px-2 py-1">{lesson.subject}</span>
+                        <div className="mt-3">
+                          <Link to={`/lesson/${lesson.id}`} className="px-3 py-1 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm">عرض الدرس</Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             ) : (
               <p className="empty-state">لا توجد دروس متاحة حالياً</p>
             )}
           </div>
         );
+      case 'materials':
+        return <EducationalMaterialsByGrade grade={gradeName} />;
 
       case 'schedule':
         return (
@@ -170,10 +210,8 @@ const GradePage = () => {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">📝 الواجبات</h2>
               <p className="text-gray-600 dark:text-gray-400">مهام وواجبات الصف</p>
             </div>
-
             {tasks.length > 0 ? (
               <div className="space-y-6">
-                {/* Statistics Cards */}
                 {tasks[0]?.statistics && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-blue-50 dark:bg-blue-900/50 rounded-xl p-4 text-center">
@@ -202,118 +240,29 @@ const GradePage = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Tasks List */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
                   <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
                     <h3 className="text-xl font-bold text-white">واجبات {tasks[0]?.grade}</h3>
                   </div>
-
                   <div className="p-6 space-y-4">
-                    {tasks.map(task => {
-                      const dueDate = new Date(task.dueDate);
-                      const today = new Date();
-                      const isOverdue = dueDate < today;
-                      const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-                      
-                      return (
-                        <div key={task._id} className={`rounded-xl p-6 border-2 transition-all duration-300 hover:shadow-lg ${
-                          isOverdue 
-                            ? 'border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-900/20' 
-                            : daysUntilDue <= 3
-                              ? 'border-orange-200 bg-orange-50 dark:border-orange-700 dark:bg-orange-900/20'
-                              : 'border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700'
-                        }`}>
-                          <div className="flex flex-col md:flex-row md:items-start justify-between space-y-4 md:space-y-0">
-                            {/* Task Info */}
-                            <div className="flex-1">
-                              <div className="flex items-start space-x-3 space-x-reverse mb-3">
-                                <div className={`rounded-full p-2 flex-shrink-0 ${
-                                  isOverdue 
-                                    ? 'bg-red-100 dark:bg-red-900' 
-                                    : daysUntilDue <= 3
-                                      ? 'bg-orange-100 dark:bg-orange-900'
-                                      : 'bg-blue-100 dark:bg-blue-900'
-                                }`}>
-                                  <span className="text-xl">
-                                    {isOverdue ? '⚠️' : daysUntilDue <= 3 ? '⏰' : '📝'}
-                                  </span>
-                                </div>
-                                <div className="flex-1">
-                                  <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                                    {task.title}
-                                  </h4>
-                                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                                    {task.description}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Subject */}
-                              <div className="flex items-center space-x-2 space-x-reverse mb-3">
-                                <span className="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-3 py-1 rounded-full text-sm font-medium">
-                                  📚 {task.subject}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Due Date and Status */}
-                            <div className="flex flex-col items-end space-y-3">
-                              <div className="text-right">
-                                <p className="text-sm text-gray-500 dark:text-gray-400">موعد التسليم</p>
-                                <p className={`font-bold text-lg ${
-                                  isOverdue 
-                                    ? 'text-red-600 dark:text-red-400' 
-                                    : daysUntilDue <= 3
-                                      ? 'text-orange-600 dark:text-orange-400'
-                                      : 'text-gray-900 dark:text-white'
-                                }`}>
-                                  {dueDate.toLocaleDateString('ar-EG', { 
-                                    day: 'numeric', 
-                                    month: 'short',
-                                    year: 'numeric'
-                                  })}
-                                </p>
-                                <p className={`text-sm ${
-                                  isOverdue 
-                                    ? 'text-red-500 dark:text-red-400' 
-                                    : daysUntilDue <= 3
-                                      ? 'text-orange-500 dark:text-orange-400'
-                                      : 'text-gray-500 dark:text-gray-400'
-                                }`}>
-                                  {isOverdue 
-                                    ? `متأخر بـ ${Math.abs(daysUntilDue)} يوم` 
-                                    : daysUntilDue === 0
-                                      ? 'اليوم'
-                                      : daysUntilDue === 1
-                                        ? 'غداً'
-                                        : `باقي ${daysUntilDue} أيام`
-                                  }
-                                </p>
-                              </div>
-
-                            </div>
-                          </div>
-
-                          {/* Created By */}
-                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                            <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                              <div className="flex items-center space-x-2 space-x-reverse">
-                                <span>👨‍🏫</span>
-                                <span>بواسطة: {task.createdBy?.email}</span>
-                              </div>
-                              <div className="flex items-center space-x-2 space-x-reverse">
-                                <span>📅</span>
-                                <span>أُنشئ في: {new Date(task.createdAt).toLocaleDateString('ar-EG')}</span>
-                              </div>
-                            </div>
-                          </div>
+                    {tasks.map(task => (
+                      <div key={task._id || task.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                          <div className="font-bold text-lg text-gray-900 dark:text-white mb-1">{task.title}</div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{task.description}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">المادة: {task.subject}</div>
                         </div>
-                      );
-                    })}
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-center">
+                          <button
+                            onClick={() => navigate(`/task/${task._id || task.id}`)}
+                            className="bg-primary-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-700 transition-colors duration-200"
+                          >
+                            حل المهمة
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-
-                  {/* Pagination Footer */}
                   {tasks[0]?.pagination && (
                     <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
                       <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
@@ -340,13 +289,7 @@ const GradePage = () => {
           </div>
         );
 
-      case 'materials':
-        return (
-          <div className="materials-list">
-            <h3>المواد التعليمية</h3>
-            <p className="empty-state">المواد التعليمية ستكون متاحة قريباً</p>
-          </div>
-        );
+      // تمت معالجة نافذة المواد التعليمية أعلاه
 
       case 'quizzes':
         return (

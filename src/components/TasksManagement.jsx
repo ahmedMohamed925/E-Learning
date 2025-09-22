@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getTasks, createTask, updateTask, deleteTask } from '../api/tasks.js';
 import { gradeMapping } from '../utils/gradeMapping.js';
 
@@ -10,10 +10,13 @@ const TasksManagement = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    subject: '',
     grade: '',
     dueDate: '',
-    points: 10
+    points: 10,
+    questions: []
   });
+  const [errors, setErrors] = useState([]);
 
   useEffect(() => {
     fetchTasks();
@@ -40,12 +43,42 @@ const TasksManagement = () => {
 
   const handleCreateTask = async (e) => {
     e.preventDefault();
+    setErrors([]);
     try {
-      await createTask(formData);
-      setFormData({ title: '', description: '', grade: '', dueDate: '', points: 10 });
+      // تجهيز الأسئلة بالشكل المطلوب للباك اند
+      const preparedQuestions = (formData.questions || []).map(q => {
+        let prepared = { ...q };
+        if (q.type === 'اختر من متعدد') {
+          prepared.options = q.options.map((opt, idx) => ({
+            text: opt,
+            isCorrect: idx === q.correctAnswer
+          }));
+          delete prepared.correctAnswer;
+        } else if (q.type === 'صح وخطأ') {
+          prepared.correctAnswer = q.correctAnswer === 0 ? true : false;
+          prepared.options = [];
+        }
+        return prepared;
+      });
+      const dataToSend = {
+        ...formData,
+        questions: preparedQuestions
+      };
+      await createTask(dataToSend);
+      setFormData({ title: '', description: '', subject: '', grade: '', dueDate: '', points: 10, questions: [] });
       setShowCreateForm(false);
       fetchTasks();
     } catch (error) {
+      // استخراج الأخطاء من السيرفر إن وجدت
+      let serverErrors = [];
+      if (error.response && error.response.data && error.response.data.errors) {
+        serverErrors = error.response.data.errors;
+      } else if (error.message) {
+        serverErrors = [{ field: '', message: error.message }];
+      } else {
+        serverErrors = [{ field: '', message: 'حدث خطأ غير متوقع' }];
+      }
+      setErrors(serverErrors);
       console.error('خطأ في إنشاء المهمة:', error);
     }
   };
@@ -53,9 +86,28 @@ const TasksManagement = () => {
   const handleUpdateTask = async (e) => {
     e.preventDefault();
     try {
-      await updateTask(editingTask.id, formData);
+      // تجهيز الأسئلة بالشكل المطلوب للباك اند
+      const preparedQuestions = (formData.questions || []).map(q => {
+        let prepared = { ...q };
+        if (q.type === 'اختر من متعدد') {
+          prepared.options = q.options.map((opt, idx) => ({
+            text: opt,
+            isCorrect: idx === q.correctAnswer
+          }));
+          delete prepared.correctAnswer;
+        } else if (q.type === 'صح وخطأ') {
+          prepared.correctAnswer = q.correctAnswer === 0 ? true : false;
+          prepared.options = [];
+        }
+        return prepared;
+      });
+      const dataToSend = {
+        ...formData,
+        questions: preparedQuestions
+      };
+      await updateTask(editingTask._id || editingTask.id, dataToSend);
       setEditingTask(null);
-      setFormData({ title: '', description: '', grade: '', dueDate: '', points: 10 });
+      setFormData({ title: '', description: '', subject: '', grade: '', dueDate: '', points: 10, questions: [] });
       fetchTasks();
     } catch (error) {
       console.error('خطأ في تحديث المهمة:', error);
@@ -78,17 +130,76 @@ const TasksManagement = () => {
     setFormData({
       title: task.title,
       description: task.description,
+      subject: task.subject || '',
       grade: task.grade,
       dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
-      points: task.points || 10
+      points: task.points || 10,
+      questions: (task.questions || []).map(q => {
+        let correctIdx;
+        let opts = [];
+        if (q.type === 'اختر من متعدد') {
+          opts = Array.isArray(q.options) ? q.options.map(opt => (typeof opt === 'object' && opt !== null && 'text' in opt ? opt.text : opt)) : [];
+          correctIdx = Array.isArray(q.options) ? q.options.findIndex(opt => (typeof opt === 'object' && opt !== null && opt.isCorrect === true)) : 0;
+        } else if (q.type === 'صح وخطأ') {
+          opts = ['صح', 'خطأ'];
+          correctIdx = q.correctAnswer === true ? 0 : 1;
+        }
+        return {
+          ...q,
+          options: opts,
+          correctAnswer: correctIdx >= 0 ? correctIdx : 0
+        };
+      })
     });
     setShowCreateForm(true);
   };
+  // إدارة الأسئلة (إضافة/تعديل/حذف)
+  const addQuestion = () => {
+    const newQuestion = {
+      id: Date.now(),
+      questionText: '',
+      type: 'اختر من متعدد',
+      options: ['A', 'B', 'C', 'D'],
+      correctAnswer: 0,
+      points: 1
+    };
+    setFormData({
+      ...formData,
+      questions: [...(formData.questions || []), newQuestion]
+    });
+  };
+
+  const updateQuestion = (index, field, value) => {
+    const updatedQuestions = [...formData.questions];
+    if (field === 'type') {
+      if (value === 'اختر من متعدد') {
+        updatedQuestions[index].options = ['A', 'B', 'C', 'D'];
+        updatedQuestions[index].correctAnswer = 0;
+      } else if (value === 'صح وخطأ') {
+        updatedQuestions[index].options = ['صح', 'خطأ'];
+        updatedQuestions[index].correctAnswer = 0;
+      }
+    }
+    updatedQuestions[index][field] = value;
+    setFormData({ ...formData, questions: updatedQuestions });
+  };
+
+  const updateQuestionOption = (questionIndex, optionIndex, value) => {
+    const updatedQuestions = [...formData.questions];
+    updatedQuestions[questionIndex].options[optionIndex] = value;
+    setFormData({ ...formData, questions: updatedQuestions });
+  };
+
+  const removeQuestion = (index) => {
+    const updatedQuestions = formData.questions.filter((_, i) => i !== index);
+    setFormData({ ...formData, questions: updatedQuestions });
+  };
 
   const resetForm = () => {
-    setFormData({ title: '', description: '', grade: '', dueDate: '', points: 10 });
+    setFormData({ title: '', description: '', subject: '', grade: '', dueDate: '', points: 10 });
     setShowCreateForm(false);
     setEditingTask(null);
+    setErrors([]);
   };
 
   if (loading) {
@@ -129,6 +240,17 @@ const TasksManagement = () => {
             </button>
           </div>
 
+          {/* عرض الأخطاء القادمة من السيرفر */}
+          {errors.length > 0 && (
+            <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded p-3">
+              <ul className="list-disc pr-5 text-red-700 dark:text-red-200 text-sm">
+                {errors.map((err, idx) => (
+                  <li key={idx}>{err.message}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <form onSubmit={editingTask ? handleUpdateTask : handleCreateTask} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -139,6 +261,19 @@ const TasksManagement = () => {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  المادة
+                </label>
+                <input
+                  type="text"
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   required
                 />
@@ -199,6 +334,102 @@ const TasksManagement = () => {
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 required
               />
+            </div>
+
+            {/* إدارة الأسئلة */}
+            <div className="mt-6">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">الأسئلة</h4>
+                <button
+                  type="button"
+                  onClick={addQuestion}
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors duration-200"
+                >
+                  ➕ إضافة سؤال
+                </button>
+              </div>
+              {(formData.questions || []).map((question, questionIndex) => (
+                <div key={question.id || questionIndex} className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-semibold text-gray-900 dark:text-white">السؤال {questionIndex + 1}</h5>
+                    <button
+                      type="button"
+                      onClick={() => removeQuestion(questionIndex)}
+                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="نص السؤال (يمكنك وضع لينك صورة أو نص عادي)"
+                      value={question.questionText}
+                      onChange={(e) => updateQuestion(questionIndex, 'questionText', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">نوع السؤال</label>
+                      <select
+                        value={question.type}
+                        onChange={(e) => updateQuestion(questionIndex, 'type', e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                      >
+                        <option value="اختر من متعدد">اختر من متعدد</option>
+                        <option value="صح وخطأ">صح وخطأ</option>
+                      </select>
+                    </div>
+                    {question.type === 'اختر من متعدد' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {['A', 'B', 'C', 'D'].map((label, optionIndex) => (
+                          <div key={optionIndex} className="flex items-center space-x-2 space-x-reverse">
+                            <input
+                              type="radio"
+                              name={`correct-${questionIndex}`}
+                              checked={question.correctAnswer === optionIndex}
+                              onChange={() => updateQuestion(questionIndex, 'correctAnswer', optionIndex)}
+                              className="text-blue-600"
+                            />
+                            <span className="font-bold text-gray-700 dark:text-gray-300">{label}.</span>
+                            <input
+                              type="text"
+                              placeholder={`الخيار ${label}`}
+                              value={question.options[optionIndex]}
+                              onChange={(e) => updateQuestionOption(questionIndex, optionIndex, e.target.value)}
+                              className="flex-1 p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {question.type === 'صح وخطأ' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {['صح', 'خطأ'].map((label, optionIndex) => (
+                          <div key={optionIndex} className="flex items-center space-x-2 space-x-reverse">
+                            <input
+                              type="radio"
+                              name={`correct-${questionIndex}`}
+                              checked={question.correctAnswer === optionIndex}
+                              onChange={() => updateQuestion(questionIndex, 'correctAnswer', optionIndex)}
+                              className="text-blue-600"
+                            />
+                            <span className="font-bold text-gray-700 dark:text-gray-300">{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <input
+                      type="number"
+                      placeholder="نقاط السؤال"
+                      value={question.points}
+                      onChange={(e) => updateQuestion(questionIndex, 'points', parseInt(e.target.value) || 1)}
+                      className="w-24 p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                      min="1"
+                      max="10"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="flex justify-end space-x-3 space-x-reverse">
@@ -282,7 +513,7 @@ const TasksManagement = () => {
                         ✏️ تحرير
                       </button>
                       <button
-                        onClick={() => handleDeleteTask(task.id)}
+                        onClick={() => handleDeleteTask(task._id || task.id)}
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                       >
                         🗑️ حذف

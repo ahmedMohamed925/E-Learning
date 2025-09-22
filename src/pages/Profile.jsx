@@ -3,6 +3,9 @@ import { useSelector } from 'react-redux';
 import { getStudentCalendar, getStudentDayEvents } from '../api/schedule.js';
 import { getMyQuizResults } from '../api/quizzes.js';
 import { showToast } from '../utils/helpers.js';
+import StudentTaskResults from '../components/StudentTaskResults.jsx';
+import * as tasksApi from '../api/tasks.js';
+import { getStudentOverallProgress } from '../api/student.js';
 
 const Profile = () => {
   const { user } = useSelector((state) => state.auth);
@@ -12,6 +15,25 @@ const Profile = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [quizResults, setQuizResults] = useState([]);
+  const [taskResults, setTaskResults] = useState({ results: [], statistics: {} });
+  const [overallProgress, setOverallProgress] = useState(null);
+  const [loadingOverall, setLoadingOverall] = useState(false);
+  // جلب المستوى العام للطالب
+  const fetchOverallProgress = async () => {
+    try {
+      setLoadingOverall(true);
+      const response = await getStudentOverallProgress();
+      if (response.success && response.data) {
+        setOverallProgress(response.data);
+      } else {
+        setOverallProgress(null);
+      }
+    } catch (error) {
+      setOverallProgress(null);
+    } finally {
+      setLoadingOverall(false);
+    }
+  };
 
   // بيانات وهمية للدرجات
   const studentGrades = [
@@ -22,6 +44,20 @@ const Profile = () => {
     { subject: 'لغة عربية', score: 95, total: 100, grade: 'ممتاز', color: 'text-green-600' }
   ];
 
+  // جلب نتائج المهام من الباك إند (نفس منطق الكويزات)
+  const fetchTaskResults = async () => {
+    try {
+      const response = await tasksApi.getMyTaskResults();
+      if (response.success && response.data) {
+        setTaskResults(response.data);
+      } else {
+        setTaskResults({ results: [], statistics: {} });
+      }
+    } catch (error) {
+      setTaskResults({ results: [], statistics: {} });
+      showToast('حدث خطأ في جلب نتائج المهام', 'error');
+    }
+  };
   // جلب بيانات التقويم من الباك إند
   const fetchCalendarData = async () => {
     try {
@@ -58,6 +94,12 @@ const Profile = () => {
       fetchCalendarData();
     } else if (activeTab === 'grades') {
       fetchQuizResults();
+    } else if (activeTab === 'taskResults') {
+      fetchTaskResults();
+    }
+    // جلب المستوى العام عند فتح الصفحة لأول مرة فقط
+    if (!overallProgress && !loadingOverall) {
+      fetchOverallProgress();
     }
   }, [activeTab, selectedMonth, selectedYear]);
 
@@ -67,6 +109,8 @@ const Profile = () => {
         return <ProfileInfo user={user} />;
       case 'grades':
         return <StudentGrades grades={studentGrades} quizResults={quizResults} />;
+      case 'taskResults':
+        return <StudentTaskResults taskResults={taskResults} />;
       case 'schedule':
         return (
           <StudentSchedule 
@@ -88,6 +132,80 @@ const Profile = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">الملف الشخصي</h1>
 
+        {/* نافذة المستوى العام بشكل شريط دائري جميل */}
+        <div className="mb-6">
+          <div className="bg-gradient-to-r from-primary-100 to-blue-100 dark:from-primary-900/40 dark:to-blue-900/40 rounded-xl shadow p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-6 w-full">
+              <div className="relative flex items-center justify-center" style={{ width: 100, height: 100 }}>
+                {/* شريط التقدم الدائري */}
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="10"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="none"
+                    stroke="#2563eb"
+                    strokeWidth="10"
+                    strokeDasharray={2 * Math.PI * 42}
+                    strokeDashoffset={
+                      loadingOverall || !overallProgress
+                        ? 2 * Math.PI * 42
+                        : 2 * Math.PI * 42 * (1 - overallProgress.overallPercentage / 100)
+                    }
+                    strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(.4,2,.6,1)' }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="text-xl font-bold text-primary-700 dark:text-primary-300">
+                    {loadingOverall ? (
+                      <span className="text-gray-500 dark:text-gray-300 text-sm">...</span>
+                    ) : overallProgress ? (
+                      <>{overallProgress.overallPercentage}<span className="text-base">%</span></>
+                    ) : (
+                      <span className="text-gray-500 dark:text-gray-300 text-sm">--%</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-300 mt-1">المستوى العام</div>
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="text-lg font-bold text-gray-900 dark:text-white mb-1">مستواك العام</div>
+                {loadingOverall ? (
+                  <span className="text-gray-500 dark:text-gray-300 text-sm">جاري التحميل...</span>
+                ) : overallProgress ? (
+                  <div className="flex flex-col gap-1">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
+                      إجمالي الأنشطة: <span className="font-bold">{overallProgress.totalActivities}</span>
+                    </div>
+                    <div className="text-sm text-green-700 dark:text-green-400">
+                      ✅ ناجح: <span className="font-bold">{overallProgress.passed}</span>
+                    </div>
+                    <div className="text-sm text-red-700 dark:text-red-400">
+                      ❌ راسب: <span className="font-bold">{overallProgress.failed}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-gray-500 dark:text-gray-300 text-sm">لا يوجد بيانات</span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={fetchOverallProgress}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition mt-4 sm:mt-0"
+              disabled={loadingOverall}
+            >تحديث المستوى</button>
+          </div>
+        </div>
+
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md mb-6">
           <nav className="flex space-x-1 space-x-reverse p-1">
             <button
@@ -101,7 +219,6 @@ const Profile = () => {
               <span>👤</span>
               <span>معلومات الطالب</span>
             </button>
-            
             <button
               onClick={() => setActiveTab('grades')}
               className={`flex-1 py-3 px-6 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2 space-x-reverse ${
@@ -113,7 +230,17 @@ const Profile = () => {
               <span>📊</span>
               <span>درجات الطالب</span>
             </button>
-            
+            <button
+              onClick={() => setActiveTab('taskResults')}
+              className={`flex-1 py-3 px-6 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2 space-x-reverse ${
+                activeTab === 'taskResults'
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <span>📝</span>
+              <span>نتائج المهام</span>
+            </button>
             <button
               onClick={() => setActiveTab('schedule')}
               className={`flex-1 py-3 px-6 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-2 space-x-reverse ${

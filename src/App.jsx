@@ -18,6 +18,7 @@ import Grades from './pages/Grades.jsx';
 import QuizPage from './pages/QuizPage.jsx';
 import QuizResults from './pages/QuizResults.jsx';
 import NotFound from './pages/NotFound.jsx';
+import TaskPage from './pages/TaskPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import useAutoRefreshToken from './utils/useAutoRefreshToken.js';
 import './App.css';
@@ -45,6 +46,11 @@ const AppContent = () => {
           <Route path="/quiz/:quizId" element={
             <ProtectedRoute>
               <QuizPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/task/:taskId" element={
+            <ProtectedRoute>
+              <TaskPage />
             </ProtectedRoute>
           } />
           <Route path="/quiz-results" element={

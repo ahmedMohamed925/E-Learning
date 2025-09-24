@@ -61,23 +61,20 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center space-x-3 space-x-reverse text-gray-300">
                 <span className="text-lg">📧</span>
-                <div>
-                  <div className="text-sm text-gray-400">البريد الإلكتروني</div>
-                  <div>info@bidaya-platform.com</div>
-                </div>
+               
               </div>
               <div className="flex items-center space-x-3 space-x-reverse text-gray-300">
                 <span className="text-lg">📞</span>
                 <div>
                   <div className="text-sm text-gray-400">الهاتف</div>
-                  <div>+20 100 123 4567</div>
+                  <div>+20 100 533 5464</div>
                 </div>
               </div>
               <div className="flex items-center space-x-3 space-x-reverse text-gray-300">
                 <span className="text-lg">📍</span>
                 <div>
                   <div className="text-sm text-gray-400">العنوان</div>
-                  <div>القاهرة، مصر</div>
+                  <div>قنا,الاجايوه غرب</div>
                 </div>
               </div>
             </div>

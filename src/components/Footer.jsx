@@ -8,11 +8,8 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <div className="flex items-center space-x-3 space-x-reverse mb-4">
-              <img 
-                src="https://drive.google.com/uc?id=1IOJX6XEEgmVHEmiXiE5B0AKtaS3K95UC" 
-                alt="منصة البداية" 
-                className="h-12 w-12 rounded-lg"
-              />
+                         <img src="/FirstLogo.jpg" alt="منصة البداية" className="h-12 w-12 rounded-lg object-cover shadow-md" />
+
               <h3 className="text-2xl font-bold">منصة البداية</h3>
             </div>
             <p className="text-gray-300 mb-4 leading-relaxed">
@@ -20,9 +17,7 @@ const Footer = () => {
               نقدم تعليماً عالي الجودة بأسلوب مبتكر وممتع.
             </p>
             <div className="flex space-x-4 space-x-reverse">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">
-                <span className="text-2xl">📧</span>
-              </a>
+             
               <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">
                 <span className="text-2xl">📱</span>
               </a>
@@ -86,14 +81,27 @@ const Footer = () => {
             <p className="text-gray-400 text-center md:text-right">
               &copy; 2025 منصة البداية. جميع الحقوق محفوظة.
             </p>
-            <div className="flex items-center space-x-4 space-x-reverse mt-4 md:mt-0">
-              <Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors duration-200">
-                سياسة الخصوصية
-              </Link>
-              <Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors duration-200">
-                شروط الاستخدام
-              </Link>
-            </div>
+          </div>
+          {/* عبارة الإنشاء وروابط LinkedIn */}
+          <div className="mt-6 text-center text-gray-400 text-sm">
+            تم إنشاء المنصة بواسطة:
+            <a
+              href="https://www.linkedin.com/in/ahmed-mohmed-707603256/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mx-1 text-primary-400 hover:text-primary-200 underline"
+            >
+              أحمد محمد
+            </a>
+            ,
+            <a
+              href="https://www.linkedin.com/in/mohamed-saad-b33767320/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mx-1 text-primary-400 hover:text-primary-200 underline"
+            >
+              محمد سعد
+            </a>
           </div>
         </div>
       </div>

@@ -65,8 +65,12 @@ const Profile = () => {
       const response = await getStudentCalendar(selectedMonth, selectedYear);
       setCalendarData(response.data);
     } catch (error) {
-      console.error('خطأ في جلب بيانات التقويم:', error);
-      showToast('حدث خطأ في جلب بيانات التقويم', 'error');
+      let msg = 'حدث خطأ في جلب بيانات التقويم';
+      if (error?.response?.data?.message === 'Forbidden: insufficient permissions' || error?.message === 'Forbidden: insufficient permissions') {
+        msg = 'ليس لديك صلاحية لعرض تقويم الطالب.';
+      }
+      showToast(msg, 'error');
+      setCalendarData(null);
     } finally {
       setIsLoading(false);
     }
@@ -206,7 +210,21 @@ const Profile = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md mb-6">
+        {/* Dropdown للموبايل فقط */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md mb-6 p-4 block sm:hidden">
+          <select
+            value={activeTab}
+            onChange={e => setActiveTab(e.target.value)}
+            className="w-full py-3 px-4 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 shadow"
+          >
+            <option value="info">👤 معلومات الطالب</option>
+            <option value="grades">📊 درجات الطالب</option>
+            <option value="taskResults">📝 نتائج المهام</option>
+            <option value="schedule">📅 تقويم الطالب</option>
+          </select>
+        </div>
+        {/* أزرار أفقية لسطح المكتب والأجهزة المتوسطة فما فوق */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md mb-6 hidden sm:block">
           <nav className="flex space-x-1 space-x-reverse p-1">
             <button
               onClick={() => setActiveTab('info')}

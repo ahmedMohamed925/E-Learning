@@ -93,15 +93,8 @@ const Footer = () => {
             >
               أحمد محمد
             </a>
-            ,
-            <a
-              href="https://www.linkedin.com/in/mohamed-saad-b33767320/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mx-1 text-primary-400 hover:text-primary-200 underline"
-            >
-              محمد سعد
-            </a>
+            
+           
           </div>
         </div>
       </div>

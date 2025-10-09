@@ -77,7 +77,7 @@ const Login = () => {
           
           {error && (
             <div className="bg-error-50 dark:bg-error-900 border border-error-200 dark:border-error-700 text-error-800 dark:text-error-300 px-4 py-3 rounded-lg mb-4">
-              {error}
+              {error} {/* رسالة الخطأ من السيرفر مباشرة */}
             </div>
           )}
 

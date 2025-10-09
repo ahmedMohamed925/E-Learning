@@ -1,18 +1,18 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+
+// رموز وعمليات رياضية مختلفة - خارج المكون لتجنب إعادة الإنشاء
+const mathSymbols = [
+  '∫', '∑', '∏', '√', '∞', 'π', 'α', 'β', 'γ', 'δ', 'θ', 'λ', 'μ', 'σ', 'φ', 'ψ', 'ω',
+  '≈', '≠', '≤', '≥', '±', '×', '÷', '∂', '∇', '∴', '∵', '∈', '∉', '⊂', '⊃', '∪', '∩',
+  'sin', 'cos', 'tan', 'log', 'ln', 'exp', 'lim', 'dx', 'dy', 'f(x)', 'g(x)', 'h(x)',
+  '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '-', '=', '(', ')', '[', ']',
+  'x²', 'x³', 'x⁴', 'y²', 'z²', 'a²', 'b²', 'c²', 'n!', 'Σx', '∆x', '∆y'
+];
 
 const MathBackground = () => {
-  // رموز وعمليات رياضية مختلفة
-  const mathSymbols = [
-    '∫', '∑', '∏', '√', '∞', 'π', 'α', 'β', 'γ', 'δ', 'θ', 'λ', 'μ', 'σ', 'φ', 'ψ', 'ω',
-    '≈', '≠', '≤', '≥', '±', '×', '÷', '∂', '∇', '∴', '∵', '∈', '∉', '⊂', '⊃', '∪', '∩',
-    'sin', 'cos', 'tan', 'log', 'ln', 'exp', 'lim', 'dx', 'dy', 'f(x)', 'g(x)', 'h(x)',
-    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '-', '=', '(', ')', '[', ']',
-    'x²', 'x³', 'x⁴', 'y²', 'z²', 'a²', 'b²', 'c²', 'n!', 'Σx', '∆x', '∆y'
-  ];
-
-  // إنشاء مصفوفة من الرموز بمواضع عشوائية
-  const generateSymbols = () => {
-    const symbols = [];
+  // إنشاء مصفوفة من الرموز بمواضع عشوائية - يتم تنفيذها مرة واحدة فقط
+  const symbols = useMemo(() => {
+    const symbolsArray = [];
     for (let i = 0; i < 80; i++) {
       const symbol = mathSymbols[Math.floor(Math.random() * mathSymbols.length)];
       const x = Math.random() * 100;
@@ -22,7 +22,7 @@ const MathBackground = () => {
       const rotation = Math.random() * 360;
       const delay = Math.random() * 10; // تأخير للحركة
 
-      symbols.push({
+      symbolsArray.push({
         id: i,
         symbol,
         x,
@@ -33,10 +33,8 @@ const MathBackground = () => {
         delay
       });
     }
-    return symbols;
-  };
-
-  const symbols = generateSymbols();
+    return symbolsArray;
+  }, []); // مصفوفة فارغة تعني أن هذا سيتم تنفيذه مرة واحدة فقط
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden">

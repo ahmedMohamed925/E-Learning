@@ -26,7 +26,9 @@ export const signupUser = createAsyncThunk(
       const response = await signupApi(userData);
       return response;
     } catch (error) {
-      return rejectWithValue(error.message);
+      // إرجاع الـ error object الكامل مع البيانات من response
+      const errorData = error.response?.data || { message: error.message };
+      return rejectWithValue(errorData);
     }
   }
 );
@@ -43,7 +45,9 @@ export const verifyOtpUser = createAsyncThunk(
       }
       return response;
     } catch (error) {
-      return rejectWithValue(error.message);
+      // إرجاع الـ error object الكامل مع البيانات من response
+      const errorData = error.response?.data || { message: error.message };
+      return rejectWithValue(errorData);
     }
   }
 );

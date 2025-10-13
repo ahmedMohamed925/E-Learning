@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { signupUser, verifyOtpUser } from '../redux/slices/authSlice';
+import { signupUser } from '../redux/slices/authSlice';
 import MathBackground from '../components/MathBackground';
 
 const Register = () => {
@@ -17,9 +17,6 @@ const Register = () => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [showOtpVerification, setShowOtpVerification] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [registrationData, setRegistrationData] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -37,9 +34,8 @@ const Register = () => {
       newErrors.name = 'يجب أن يحتوي الاسم على كلمتين على الأقل';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'البريد الإلكتروني مطلوب';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    // التحقق من البريد الإلكتروني إذا تم إدخاله (اختياري)
+    if (formData.email.trim() && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'البريد الإلكتروني غير صحيح';
     }
 
@@ -120,11 +116,15 @@ const Register = () => {
         code: formData.code
       };
       
-      const response = await dispatch(signupUser(userData)).unwrap();
+      await dispatch(signupUser(userData)).unwrap();
       
-      // حفظ بيانات التسجيل وعرض شاشة OTP
-      setRegistrationData(response);
-      setShowOtpVerification(true);
+      // بما أن النظام الجديد يفعل الحساب تلقائياً، توجيه المستخدم لصفحة تسجيل الدخول
+      navigate('/login', { 
+        state: { 
+          message: 'تم إنشاء الحساب وتفعيله بنجاح! يرجى تسجيل الدخول باستخدام الكود',
+          code: formData.code
+        }
+      });
       
     } catch (error) {
       console.log('Registration error:', error);
@@ -145,151 +145,6 @@ const Register = () => {
       setIsLoading(false);
     }
   };
-
-  const handleOtpSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!otpCode.trim()) {
-      setErrors({ otp: 'رمز التحقق مطلوب' });
-      return;
-    }
-    
-    if (otpCode.length !== 6) {
-      setErrors({ otp: 'رمز التحقق يجب أن يكون 6 أرقام' });
-      return;
-    }
-    
-    setIsLoading(true);
-    setErrors({});
-    
-    try {
-      console.log('محاولة التحقق من OTP:', otpCode);
-      console.log('OTP المتوقع:', registrationData?.otp);
-      
-      // استدعاء API للتحقق من OTP
-      const otpData = {
-        email: formData.email,
-        otp: otpCode.trim()
-      };
-      
-      await dispatch(verifyOtpUser(otpData)).unwrap();
-      
-      navigate('/login', { 
-        state: { 
-          message: 'تم إنشاء الحساب وتفعيله بنجاح! يرجى تسجيل الدخول',
-          email: formData.email
-        }
-      });
-    } catch (error) {
-      console.error('خطأ في التحقق من OTP:', error);
-      
-      // التعامل مع رسائل الخطأ من الباك إند
-      const errorData = error.response?.data || error;
-      
-      if (errorData.errors && Array.isArray(errorData.errors)) {
-        // أخطاء التحقق من صحة البيانات
-        const firstError = errorData.errors[0];
-        setErrors({ otp: firstError.msg });
-      } else {
-        // عرض رسالة الخطأ الفعلية من الباك إند
-        const errorMessage = errorData.message || error.message || `خطأ: ${error.response?.status || 'غير معروف'}`;
-        setErrors({ otp: errorMessage });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    // هنا يجب إضافة API call لإعادة إرسال OTP
-    console.log('إعادة إرسال OTP');
-  };
-
-  if (showOtpVerification) {
-    console.log('عرض شاشة التحقق من OTP');
-    console.log('registrationData:', registrationData);
-    console.log('OTP المستلم:', registrationData?.otp);
-    
-    return (
-      <div className="min-h-screen flex items-center justify-center relative">
-        <MathBackground />
-        <div className="max-w-md w-full space-y-8 relative z-10">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">تأكيد البريد الإلكتروني</h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">
-                تم إرسال رمز التحقق إلى بريدك الإلكتروني
-              </p>
-              {registrationData?.otp && (
-                <div className="mt-4 p-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg">
-                  <p className="text-sm text-green-800 dark:text-green-300 mb-2">
-                    لأغراض التطوير - رمز التحقق:
-                  </p>
-                  <div className="text-center">
-                    <span className="inline-block bg-white dark:bg-gray-800 text-green-600 dark:text-green-400 font-bold text-2xl px-4 py-2 rounded border-2 border-green-300 dark:border-green-600 tracking-widest">
-                      {registrationData.otp}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {errors.otp && (
-              <div className="bg-error-50 dark:bg-error-900 border border-error-200 dark:border-error-700 text-error-800 dark:text-error-300 px-4 py-3 rounded-lg mb-4">
-                {errors.otp}
-              </div>
-            )}
-
-            <form onSubmit={handleOtpSubmit} className="space-y-6">
-              <div className="form-group">
-                <label htmlFor="otp" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  رمز التحقق
-                </label>
-                <input
-                  id="otp"
-                  name="otp"
-                  type="text"
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors duration-200 dark:bg-gray-700 dark:text-white text-center text-lg"
-                  placeholder="أدخل رمز التحقق"
-                  maxLength="6"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              >
-                {isLoading ? 'جاري التحقق...' : 'تأكيد الرمز'}
-              </button>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  إعادة إرسال الرمز
-                </button>
-              </div>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setShowOtpVerification(false)}
-                  className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                >
-                  العودة للتسجيل
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center relative">
@@ -353,7 +208,7 @@ const Register = () => {
 
             <div className="form-group">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                البريد الإلكتروني
+                البريد الإلكتروني <span className="text-gray-500 text-xs">(اختياري)</span>
               </label>
               <input
                 id="email"
@@ -366,7 +221,7 @@ const Register = () => {
                     ? 'border-error-500 focus:ring-error-500' 
                     : 'border-gray-300 dark:border-gray-600'
                 } dark:bg-gray-700 dark:text-white`}
-                placeholder="أدخل البريد الإلكتروني"
+                placeholder="أدخل البريد الإلكتروني (اختياري)"
               />
               {errors.email && (
                 <span className="text-error-600 dark:text-error-400 text-sm mt-1 block">{errors.email}</span>

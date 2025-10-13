@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, clearError } from '../redux/slices/authSlice.js';
-import { validateEmail, validatePassword } from '../utils/helpers.js';
+import { validatePassword } from '../utils/helpers.js';
 import MathBackground from '../components/MathBackground';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
+    code: '',
     password: ''
   });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { loading, error, isAuthenticated } = useSelector(state => state.auth);
 
   useEffect(() => {
@@ -22,6 +24,16 @@ const Login = () => {
       navigate('/');
     }
   }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    // عرض رسالة النجاح إذا جاء من صفحة التسجيل
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      if (location.state?.code) {
+        setFormData(prev => ({ ...prev, code: location.state.code }));
+      }
+    }
+  }, [location.state]);
 
   useEffect(() => {
     return () => {
@@ -42,10 +54,10 @@ const Login = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.email) {
-      newErrors.email = 'البريد الإلكتروني مطلوب';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'البريد الإلكتروني غير صحيح';
+    if (!formData.code) {
+      newErrors.code = 'كود الطالب مطلوب';
+    } else if (formData.code.trim().length < 3) {
+      newErrors.code = 'كود الطالب غير صحيح';
     }
 
     if (!formData.password) {
@@ -76,6 +88,12 @@ const Login = () => {
             <p className="mt-2 text-gray-600 dark:text-gray-400">مرحباً بك في منصة البداية</p>
           </div>
           
+          {successMessage && (
+            <div className="bg-success-50 dark:bg-success-900 border border-success-200 dark:border-success-700 text-success-800 dark:text-success-300 px-4 py-3 rounded-lg mb-4">
+              {successMessage}
+            </div>
+          )}
+          
           {error && (
             <div className="bg-error-50 dark:bg-error-900 border border-error-200 dark:border-error-700 text-error-800 dark:text-error-300 px-4 py-3 rounded-lg mb-4">
               {typeof error === 'string' ? error : error.message || 'حدث خطأ في تسجيل الدخول'}
@@ -84,22 +102,22 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="form-group">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">البريد الإلكتروني</label>
+              <label htmlFor="code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">كود الطالب</label>
               <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
+                type="text"
+                id="code"
+                name="code"
+                value={formData.code}
                 onChange={handleChange}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors duration-200 ${
-                  errors.email 
+                  errors.code 
                     ? 'border-error-500 focus:ring-error-500' 
                     : 'border-gray-300 dark:border-gray-600'
                 } dark:bg-gray-700 dark:text-white`}
-                placeholder="أدخل بريدك الإلكتروني"
+                placeholder="أدخل كود الطالب"
               />
-              {errors.email && (
-                <span className="text-error-600 dark:text-error-400 text-sm mt-1 block">{errors.email}</span>
+              {errors.code && (
+                <span className="text-error-600 dark:text-error-400 text-sm mt-1 block">{errors.code}</span>
               )}
             </div>
 

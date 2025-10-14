@@ -7,6 +7,7 @@ import QuizzesManagement from '../components/QuizzesManagement.jsx';
 import ScheduleManagement from '../components/ScheduleManagement.jsx';
 import Analytics from '../components/Analytics.jsx';
 import EducationalMaterialsManagement from '../components/EducationalMaterialsManagement.jsx';
+import UsersManagement from '../components/UsersManagement.jsx';
 
 const AdminDashboard = () => {
   const { user } = useSelector(state => state.auth);
@@ -52,6 +53,7 @@ const AdminDashboard = () => {
     { id: 'quizzes', label: 'إدارة الكويزات', icon: '🧠' },
     { id: 'schedule', label: 'إدارة الجدول', icon: '📅' },
     { id: 'materials', label: 'المواد التعليمية', icon: '📂' },
+    { id: 'users', label: 'إدارة المستخدمين', icon: '👥' },
   ];
 
   const renderTabContent = () => {
@@ -68,6 +70,8 @@ const AdminDashboard = () => {
         return renderScheduleContent();
       case 'materials':
         return <EducationalMaterialsManagement />;
+      case 'users':
+        return <UsersManagement />;
       default:
         return renderDashboardContent();
     }

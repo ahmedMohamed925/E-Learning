@@ -310,9 +310,21 @@ const ProfileInfo = ({ user }) => (
             </span>
           </div>
           <div className="flex items-center justify-center md:justify-start space-x-2 space-x-reverse">
-            <span className="text-xl">🔑</span>
+            <span className="text-xl">�</span>
             <span className="text-gray-600 dark:text-gray-300">
-              كود الطالب: {user?.code || '---'}
+              الدور: <span className={`font-medium px-2 py-1 rounded text-sm ${
+                user?.role === 'admin' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                user?.role === 'instructor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+              }`}>
+                {user?.role === 'admin' ? 'مدير' : user?.role === 'instructor' ? 'مدرس' : 'طالب'}
+              </span>
+            </span>
+          </div>
+          <div className="flex items-center justify-center md:justify-start space-x-2 space-x-reverse">
+            <span className="text-xl">�🔑</span>
+            <span className="text-gray-600 dark:text-gray-300">
+              كود الطالب: <span className="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">{user?.code || '---'}</span>
             </span>
           </div>
           <div className="flex items-center justify-center md:justify-start space-x-2 space-x-reverse">

@@ -34,7 +34,7 @@ export const validateEmail = (email) => {
 };
 
 export const validatePassword = (password) => {
-  return password.length >= 6;
+  return password.length >= 8;
 };
 
 export const getYouTubeEmbedUrl = (url) => {

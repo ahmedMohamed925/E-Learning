@@ -1,7 +1,8 @@
 import { store } from '../redux/store.js';
 import { refreshToken, logout } from '../redux/slices/authSlice.js';
 
-const BASE_URL = 'http://localhost:3000';
+// const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'https://api.magdy-gamal.com';
 
 // Helper function to get current auth headers
 function getAuthHeaders() {

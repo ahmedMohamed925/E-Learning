@@ -2,7 +2,8 @@ import { store } from '../redux/store.js';
 import { refreshToken, logout } from '../redux/slices/authSlice.js';
 
 // const BASE_URL = 'http://localhost:3000';
-const BASE_URL = 'https://courses-nine-eta.vercel.app';
+const BASE_URL = 'https://api.magdy-gamal.com';
+// const BASE_URL = 'https://courses-nine-eta.vercel.app';
 
 // Helper function to get current auth headers
 function getAuthHeaders() {

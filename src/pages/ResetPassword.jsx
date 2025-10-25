@@ -27,19 +27,11 @@ const ResetPassword = () => {
 
   const validatePassword = (pwd) => {
     const minLength = pwd.length >= 8;
-    const hasUpper = /[A-Z]/.test(pwd);
-    const hasLower = /[a-z]/.test(pwd);
-    const hasNumber = /\d/.test(pwd);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
     
     return {
-      isValid: minLength && hasUpper && hasLower && hasNumber && hasSpecial,
+      isValid: minLength,
       errors: {
-        minLength,
-        hasUpper,
-        hasLower,
-        hasNumber,
-        hasSpecial
+        minLength
       }
     };
   };
@@ -186,22 +178,6 @@ const ResetPassword = () => {
                   <div className="flex text-xs space-x-2">
                     <span className={`px-1 ${passwordValidation.errors.minLength ? 'text-green-600' : 'text-red-600'}`}>
                       {passwordValidation.errors.minLength ? '✅' : '❌'} 8 أحرف على الأقل
-                    </span>
-                  </div>
-                  <div className="flex text-xs space-x-2">
-                    <span className={`px-1 ${passwordValidation.errors.hasUpper ? 'text-green-600' : 'text-red-600'}`}>
-                      {passwordValidation.errors.hasUpper ? '✅' : '❌'} حرف كبير
-                    </span>
-                    <span className={`px-1 ${passwordValidation.errors.hasLower ? 'text-green-600' : 'text-red-600'}`}>
-                      {passwordValidation.errors.hasLower ? '✅' : '❌'} حرف صغير
-                    </span>
-                  </div>
-                  <div className="flex text-xs space-x-2">
-                    <span className={`px-1 ${passwordValidation.errors.hasNumber ? 'text-green-600' : 'text-red-600'}`}>
-                      {passwordValidation.errors.hasNumber ? '✅' : '❌'} رقم
-                    </span>
-                    <span className={`px-1 ${passwordValidation.errors.hasSpecial ? 'text-green-600' : 'text-red-600'}`}>
-                      {passwordValidation.errors.hasSpecial ? '✅' : '❌'} رمز خاص
                     </span>
                   </div>
                 </div>

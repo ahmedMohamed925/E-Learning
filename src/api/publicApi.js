@@ -1,5 +1,6 @@
 // Public API endpoints - لا تحتاج authentication
-const API_BASE_URL = 'http://localhost:3000';
+// const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'https://api.magdy-gamal.com';
 
 // Helper function for public API calls (no auth required)
 const publicFetch = async (endpoint, options = {}) => {

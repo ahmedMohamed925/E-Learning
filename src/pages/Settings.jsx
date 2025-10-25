@@ -85,7 +85,7 @@ const Settings = () => {
     if (!passwordData.newPassword) {
       newErrors.newPassword = 'كلمة المرور الجديدة مطلوبة';
     } else if (!validatePassword(passwordData.newPassword)) {
-      newErrors.newPassword = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+      newErrors.newPassword = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {

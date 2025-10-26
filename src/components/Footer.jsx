@@ -86,13 +86,23 @@ const Footer = () => {
           <div className="mt-6 text-center text-gray-400 text-sm">
             تم إنشاء المنصة بواسطة:
             <a
-              href="https://www.linkedin.com/in/ahmed-mohmed-707603256/"
+              href="https://www.linkedin.com/in/aahmedmuhaamed"
               target="_blank"
               rel="noopener noreferrer"
               className="mx-1 text-primary-400 hover:text-primary-200 underline"
             >
               أحمد محمد
             </a>
+            <a
+              href="https://wa.me/201062772319"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mx-1 text-primary-400 hover:text-primary-200 underline"
+            >
+              علي بهاء
+            </a>
+
+         
             
            
           </div>

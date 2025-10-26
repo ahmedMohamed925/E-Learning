@@ -63,7 +63,7 @@ const CourseCard = ({ grade, description, lessonCount = 0 }) => {
       
       <div className="p-6">
         <p className="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-          {description || `دروس شاملة في مادة الرياضة ${grade} مع شرح مفصل وأمثلة تطبيقية`}
+          {description || `دروس شاملة في مادة الرياضيات ${grade} مع شرح مفصل وأمثلة تطبيقية`}
         </p>
         
         

@@ -21,8 +21,8 @@ const TeacherIntro = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6 animate-slide-up">
             <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-              الأستاذ مجدي جمال هو مدرس مادة الرياضة المتخصص، يشرح لطلاب الصف الأول والثاني والثالث الثانوي 
-              بأسلوب واضح وممتع يساعد على الفهم السهل والتفوق كما قال المستر الواحد مننا بالف.
+              الأستاذ مجدي جمال هو معلم أول لمادة الرياضيات، متخصص في شرح دروس الصف الأول والثاني والثالث الثانوي بأسلوب واضح وممتع يساعد الطلاب على الفهم السهل والتفوق. وكما قال المستر:"الواحد مننا بالف."
+
             </p>
             
             <div className="flex flex-wrap gap-4">

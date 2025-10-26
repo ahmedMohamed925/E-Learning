@@ -13,7 +13,7 @@ const Footer = () => {
               <h3 className="text-2xl font-bold">منصة البداية</h3>
             </div>
             <p className="text-gray-300 mb-4 leading-relaxed">
-              منصة تعليمية متخصصة في تدريس مادة الرياضة للمرحلة الثانوية مع الأستاذ مجدي جمال. 
+              منصة تعليمية متخصصة في تدريس مادة الرياضيات للمرحلة الثانوية مع الأستاذ مجدي جمال. 
               نقدم تعليماً عالي الجودة بأسلوب مبتكر وممتع.
             </p>
             <div className="flex space-x-4 space-x-reverse">

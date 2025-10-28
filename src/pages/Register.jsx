@@ -268,7 +268,7 @@ const Register = () => {
                 <option value="">اختر المركز</option>
                 <option value="العسيرات">العسيرات</option>
                 <option value="المنشاة">المنشاة</option>
-                <option value="الأجايوة">الأجايوة</option>
+                <option value="الأحايوة">الأحايوة</option>
               </select>
               {errors.location && (
                 <span className="text-error-600 dark:text-error-400 text-sm mt-1 block">{errors.location}</span>

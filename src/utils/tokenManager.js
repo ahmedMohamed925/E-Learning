@@ -50,7 +50,7 @@ export const refreshTokenIfNeeded = async () => {
       setTokenTimestamp();
       return true;
     } catch (error) {
-      // فشل في تجديد التوكن، تسجيل خروج المستخدم
+      console.error('Token refresh failed:', error);
       store.dispatch(logout());
       return false;
     }

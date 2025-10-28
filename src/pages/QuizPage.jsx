@@ -746,7 +746,7 @@ const QuizResults = ({ result, onBackToGrades }) => {
         </div>
 
         {/* تفاصيل الإجابات */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
+        {/* <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
             تفاصيل الإجابات
           </h2>
@@ -774,10 +774,10 @@ const QuizResults = ({ result, onBackToGrades }) => {
                       {answer.pointsEarned}/{answer.maxPoints} نقطة
                     </span>
                   </div>
-                </div>
+                </div> */}
 
                 {/* عرض نص السؤال كصورة إذا كان لينك صورة أو Google Drive، أو كنص إذا لم يكن كذلك */}
-                {isImageUrl(answer.questionText) && !(imgErrors[index]) ? (
+                {/* {isImageUrl(answer.questionText) && !(imgErrors[index]) ? (
                   <div className="flex flex-col items-center my-4">
                     <img
                       src={getDisplayImageUrl(answer.questionText)}
@@ -824,10 +824,10 @@ const QuizResults = ({ result, onBackToGrades }) => {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* إحصائيات */}
-        {result.statistics && (
+        {/* {result.statistics && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
               الإحصائيات
@@ -863,7 +863,7 @@ const QuizResults = ({ result, onBackToGrades }) => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* أزرار الإجراءات */}
         <div className="text-center space-y-4">

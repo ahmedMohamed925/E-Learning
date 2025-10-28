@@ -1,10 +1,10 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import PropTypes from 'prop-types';
 import { gradeMapping } from '../utils/gradeMapping.js';
-import { canUserAccessGrade, getGradeAccessMessage } from '../utils/permissions.js';
+import { canUserAccessGrade } from '../utils/permissions.js';
 
-const CourseCard = ({ grade, description, lessonCount = 0 }) => {
+const CourseCard = ({ grade, description }) => {
   const gradeSlug = gradeMapping[grade];
   const { isAuthenticated, user } = useSelector(state => state.auth);
   
@@ -21,7 +21,6 @@ const CourseCard = ({ grade, description, lessonCount = 0 }) => {
   // فحص صلاحيات الوصول للصف
   const hasAccess = canUserAccessGrade(user, grade);
   const isLocked = isAuthenticated && !hasAccess;
-  const accessMessage = getGradeAccessMessage(isAuthenticated, user, grade);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 hover:border-primary-200 dark:hover:border-primary-700 transform hover:-translate-y-1 group">
@@ -116,6 +115,11 @@ const CourseCard = ({ grade, description, lessonCount = 0 }) => {
       </div>
     </div>
   );
+};
+
+CourseCard.propTypes = {
+  grade: PropTypes.string.isRequired,
+  description: PropTypes.string
 };
 
 export default CourseCard;

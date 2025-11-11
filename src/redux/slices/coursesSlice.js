@@ -35,7 +35,18 @@ const coursesSlice = createSlice({
       })
       .addCase(fetchCourses.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        // Handle both array and object responses
+        const payload = action.payload;
+        if (Array.isArray(payload)) {
+          state.list = payload;
+        } else if (payload && Array.isArray(payload.courses)) {
+          state.list = payload.courses;
+        } else if (payload && payload.data && Array.isArray(payload.data)) {
+          state.list = payload.data;
+        } else {
+          console.warn('Unexpected courses response format:', payload);
+          state.list = [];
+        }
       })
       .addCase(fetchCourses.rejected, (state, action) => {
         state.loading = false;

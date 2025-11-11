@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Hero from '../components/Hero.jsx';
 import TeacherIntro from '../components/TeacherIntro.jsx';
 import CourseCard from '../components/CourseCard.jsx';
 import { fetchCourses } from '../redux/slices/coursesSlice.js';
-import { gradeMapping } from '../utils/gradeMapping.js';
 
 const Home = () => {
   const dispatch = useDispatch();

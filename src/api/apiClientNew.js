@@ -27,34 +27,62 @@ async function handleTokenRefresh() {
   }
 }
 
-// Enhanced fetch function with retry logic for 401 responses
-async function enhancedFetch(url, options = {}) {
-  // First attempt
-  let response = await fetch(url, {
-    ...options,
-    headers: {
-      ...getAuthHeaders(),
-      ...options.headers
-    }
-  });
+// Enhanced fetch function with retry logic and timeout
+async function enhancedFetch(url, options = {}, retryCount = 0) {
+  const maxRetries = 2;
+  const timeout = 60000; // 60 seconds timeout
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    // First attempt with timeout
+    let response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        ...getAuthHeaders(),
+        ...options.headers
+      }
+    });
 
-  // If 401 and we have a token, try to refresh it
-  if (response.status === 401 && localStorage.getItem('authToken')) {
-    const refreshSuccess = await handleTokenRefresh();
+    clearTimeout(timeoutId);
+
+    // If 401 and we have a token, try to refresh it
+    if (response.status === 401 && localStorage.getItem('authToken')) {
+      const refreshSuccess = await handleTokenRefresh();
+      
+      if (refreshSuccess) {
+        // Retry the request with new token
+        const newController = new AbortController();
+        const newTimeoutId = setTimeout(() => newController.abort(), timeout);
+        
+        response = await fetch(url, {
+          ...options,
+          signal: newController.signal,
+          headers: {
+            ...getAuthHeaders(),
+            ...options.headers
+          }
+        });
+        
+        clearTimeout(newTimeoutId);
+      }
+    }
+
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
     
-    if (refreshSuccess) {
-      // Retry the request with new token
-      response = await fetch(url, {
-        ...options,
-        headers: {
-          ...getAuthHeaders(),
-          ...options.headers
-        }
-      });
+    // Retry on network errors or timeout
+    if ((error.name === 'AbortError' || error.message.includes('fetch')) && retryCount < maxRetries) {
+      console.log(`Request timed out or failed, retrying... (${retryCount + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+      return enhancedFetch(url, options, retryCount + 1);
     }
+    
+    throw error;
   }
-
-  return response;
 }
 
 export async function apiGet(path) {

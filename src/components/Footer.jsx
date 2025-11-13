@@ -69,7 +69,7 @@ const Footer = () => {
                 <span className="text-lg">📍</span>
                 <div>
                   <div className="text-sm text-gray-400">العنوان</div>
-                  <div>قنا,الأحايوة غرب</div>
+                  <div>سوهاج,الأحايوة غرب</div>
                 </div>
               </div>
             </div>

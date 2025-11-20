@@ -46,7 +46,9 @@ const Home = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {grades.map(grade => {
-                const course = courses.find(c => c.grade === grade);
+                // Ensure courses is an array before using find
+                const coursesArray = Array.isArray(courses) ? courses : [];
+                const course = coursesArray.find(c => c.grade === grade);
                 return (
                   <CourseCard
                     key={grade}

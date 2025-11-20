@@ -1,7 +1,17 @@
 import { apiGet, apiPost, apiPut, apiDelete } from './apiClient.js';
 
 export const getCourses = async () => {
-  return await apiGet('/api/courses/');
+  const response = await apiGet('/api/courses/');
+  // Ensure we always return an array
+  if (Array.isArray(response)) {
+    return response;
+  } else if (response && Array.isArray(response.courses)) {
+    return response.courses;
+  } else if (response && response.data && Array.isArray(response.data)) {
+    return response.data;
+  }
+  console.warn('getCourses returned unexpected format:', response);
+  return [];
 };
 
 export const getCourseById = async (id) => {

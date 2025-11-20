@@ -13,6 +13,9 @@ const Home = () => {
     dispatch(fetchCourses());
   }, [dispatch]);
 
+  // Debug logging
+  console.log('Home component - courses:', courses, 'isArray:', Array.isArray(courses), 'type:', typeof courses);
+
   const grades = [
     'الصف الأول الثانوي',
     'الصف الثاني الثانوي علمي', 

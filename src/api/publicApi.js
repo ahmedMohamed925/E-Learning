@@ -1,7 +1,7 @@
 
 // const API_BASE_URL = 'http://localhost:3000';
-// const API_BASE_URL = 'https://api.magdy-gamal.com';
-const API_BASE_URL = 'https://courses-nine-eta.vercel.app';
+const API_BASE_URL = 'https://api.magdy-gamal.com';
+// const API_BASE_URL = 'https://courses-nine-eta.vercel.app';
 
 // Helper function for public API calls (no auth required) with retry and timeout
 const publicFetch = async (endpoint, options = {}, retryCount = 0) => {
